@@ -1,0 +1,117 @@
+{
+  "dxt_version": "0.1",
+  "name": "gmail-mcp-server-extension",
+  "display_name": "Gmail MCP Server",
+  "version": "0.1.0",
+  "description": "The Gmail MCP server offers a comprehensive set of tools for managing emails and drafts within the user's Gmail account.",
+  "author": {
+    "name": "Ashwin Raj",
+    "email": "thisisashwinraj@gmail.com"
+  },
+  "homepage": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/tree/main/src/mcp_server/gmail",
+  "documentation": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/README.md",
+  "support": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/issues",
+  "icon": ".github/icons/gmail_mcp_server_icon.png",
+  "screenshots": [
+    ".github/gh_readme_assets/demo_claude/gmail_demo/list_and_fetch_emails_from_gmail.png",
+    ".github/gh_readme_assets/demo_claude/gmail_demo/modify_email_labels_in_gmail.png",
+    ".github/gh_readme_assets/demo_claude/gmail_demo/send_email_in_gmail.png"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "src/mcp_server/gmail/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${__dirname}",
+        "run",
+        "${__dirname}/src/mcp_server/gmail/server.py",
+        "--credentials",
+        "${user_config.oauth_credentials}"
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "get_profile",
+      "description": "Get the user's profile information from their gmail account."
+    },
+    {
+      "name": "list_messages",
+      "description": "List email messages from user's gmail account."
+    },
+    {
+      "name": "get_message",
+      "description": "Get the specified message from user's gmail account."
+    },
+    {
+      "name": "send_message",
+      "description": "Send an email message from user's gmail account."
+    },
+    {
+      "name": "modify_message_label",
+      "description": "Modify labels of a message in user's gmail account."
+    },
+    {
+      "name": "trash_message",
+      "description": "Trash a message in user's gmail account."
+    },
+    {
+      "name": "untrash_message",
+      "description": "Recover message from the trashed folder of a user's gmail account."
+    },
+    {
+      "name": "list_drafts",
+      "description": "List email drafts from user's gmail account."
+    },
+    {
+      "name": "get_draft",
+      "description": "Get the specified draft from user's gmail account."
+    },
+    {
+      "name": "send_draft",
+      "description": "Send an existing email draft from user's gmail account."
+    },
+    {
+      "name": "create_draft",
+      "description": "Create a draft email message in user's gmail account."
+    },
+    {
+      "name": "update_draft",
+      "description": "Update an existing email draft in user's gmail account."
+    },
+    {
+      "name": "delete_draft",
+      "description": "Delete the specified email draft from user's gmail account."
+    }
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.13"
+    }
+  },
+  "user_config": {
+    "oauth_credentials": {
+      "type": "file",
+      "title": "Google OAuth 2.0 Credentials",
+      "description": "Path to the credentials.json file downloaded from the Google Cloud Console for OAuth 2.0 authentication.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "keywords": [
+    "mcp",
+    "gmail"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace"
+  }
+}
