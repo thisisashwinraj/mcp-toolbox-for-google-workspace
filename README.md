@@ -25,17 +25,17 @@ This project is licensed under the Apache-2.0 License and is maintained as an op
     <tr>
       <td>Google Drive</td>
       <td><p align="justify">This server provides a suite of tools for managing files and folders within Google Drive. It offers tools to list files, create new ones, view file content and metadata, update metadata, make copies, delete files and clear trash</p></td>
-      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.1.0"><img alt="Static Badge" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.1.0/google-drive-mcp-server.dxt"><img alt="Google Drive MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
     </tr>
     <tr>
       <td>Gmail</td>
       <td><p align="justify">This server provides tools for managing emails and drafts within Gmail. It provides tools to send and receive emails, list and view message content and metadata, create and update drafts, manage profile and trash emails</p></td>
-      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.1.0"><img alt="Static Badge" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.1.0/gmail-mcp-server.dxt"><img alt="Gmail MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
     </tr>
     <tr>
       <td>Google Calendar</td>
       <td><p align="justify">This server provides a range of tools for managing calendars and events within Google Calendar. It offers tools to create, list, update, and delete events and calendars associated with your authenticated Google account</p></td>
-      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.1.0"><img alt="Static Badge" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.1.0/google-calendar-mcp-server.dxt"><img alt="Google Calendar MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
     </tr>
   </tbody>
 </table>
