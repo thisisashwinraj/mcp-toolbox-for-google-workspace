@@ -1,0 +1,98 @@
+{
+  "dxt_version": "0.1",
+  "name": "google-drive-mcp-server-extension",
+  "display_name": "Google Drive MCP Server",
+  "version": "0.1.0",
+  "description": "The Google Drive MCP server provides a suite of tools for managing files and folders within Google Drive.",
+  "author": {
+    "name": "Ashwin Raj",
+    "email": "thisisashwinraj@gmail.com"
+  },
+  "homepage": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/tree/main/src/mcp_server/google_drive",
+  "documentation": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/README.md",
+  "support": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/issues",
+  "icon": ".github/icons/google_drive_mcp_server_icon.png",
+  "screenshots": [
+    ".github/gh_readme_assets/demo_claude/google_drive_demo/create_file_in_google_drive.png",
+    ".github/gh_readme_assets/demo_claude/google_drive_demo/fetch_file_content_from_google_drive.png",
+    ".github/gh_readme_assets/demo_claude/google_drive_demo/delete_file_and_empty_trash_in_google_drive.png"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "src/mcp_server/google_drive/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${__dirname}",
+        "run",
+        "${__dirname}/src/mcp_server/google_drive/server.py",
+        "--credentials",
+        "${user_config.oauth_credentials}"
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "list_files",
+      "description": "List available files from user's Google Drive account."
+    },
+    {
+      "name": "create_file",
+      "description": "Create a new file in the specified folder in user's Google Drive account."
+    },
+    {
+      "name": "fetch_file_content",
+      "description": "Fetch content of a file from user's Google Drive account."
+    },
+    {
+      "name": "fetch_file_metadata",
+      "description": "Fetch metadata of a file from user's Google Drive account."
+    },
+    {
+      "name": "update_file_metadata",
+      "description": "Update metadata of a file in user's Google Drive account."
+    },
+    {
+      "name": "delete_file",
+      "description": "Delete a file from user's Google Drive account."
+    },
+    {
+      "name": "copy_file",
+      "description": "Create copy of an existing file in user's Google Drive account."
+    },
+    {
+      "name": "empty_trash",
+      "description": "Empty the trash in user's Google Drive account."
+    }
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.13"
+    }
+  },
+  "user_config": {
+    "oauth_credentials": {
+      "type": "file",
+      "title": "Google OAuth 2.0 Credentials",
+      "description": "Path to the credentials.json file downloaded from the Google Cloud Console for OAuth 2.0 authentication.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "keywords": [
+    "drive",
+    "mcp",
+    "google-drive"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace"
+  }
+}
