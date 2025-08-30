@@ -47,6 +47,24 @@ Before you begin, ensure that Python (>=3.13), Node.js, and npm are installed on
 
 ![Send Email in Gmail](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/gmail_demo/send_email_in_gmail.png)
 
+### Configure OAuth-2.0 Credentials
+Next you need to create OAuth 2.0 credentials in the GCP Console. Start by navigating to the [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent) in the Google Cloud Console. Click ```Get Started```, and provide the app information. For the ```audience```, choose **Internal** if you are using Google Workspace or **External** for a personal account and enter your contact information. Click ```Create```
+
+After the OAuth consent screen is ready, select ```Clients``` from the left-hand menu and click on ```Create Client```. Select ```Desktop app``` as the authentication type, provide a name, and click ```Create```. Once ready, download ```credentials.json``` file and store it securely in a safe location of your choice. You will need this later for authenticating to Workspace APIs
+
+
+## One-Click Claude for Desktop Installation (Recommended)
+
+You can easily install the **MCP servers** of your choice using our ```desktop extensions```. Begin by downloading the latest desktop extension for your preferred Google Workspace service from our [GitHub Releases](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.1.0) page. Next, install the MCP extension by either double-clicking the file to open it in Claude for Desktop or by dragging the extension directly into the application; the app will then launch and display a dialog box prompting you to install the mcp server to your app
+
+Click ```Install``` in the **top-right** corner, and if your operating system requests confirmation, click ```Install``` again. Next, browse and select your oauth ```credentials.json``` file and click Save. If the extension is not already enabled, toggle the switch to activate it. After completing these steps, the server will be ready for use. To start using it, simply open a new Claude chat, and enter any prompt that requires calling **one or more tools** available within the server you've installed.
+
+![Setup MCP Server Extension](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_extensions/google_drive_extension_setup_install.png)
+![Select OAuth Credentials for MCP Server](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_extensions/google_drive_extension_setup_select_credentials.png)
+
+
+## Claude for Desktop Setup (Legacy)
+
 To begin with the setup, clone this repository, create a virtual environment, and install all the necessary dependencies:
 
 ```shell
@@ -61,44 +79,6 @@ uv venv
 # Install the requierd packages
 uv sync
 ```
-
-Next you need to create OAuth 2.0 credentials in the GCP Console. Start by navigating to the OAuth consent screen in the Google Cloud Console. Click ```Get Started```, and provide the app information. For the ```audience```, choose **Internal** if you are using Google Workspace or **External** for a personal account and enter your contact information. Click ```Create```
-
-After the OAuth consent screen is ready, select ```Clients``` from the left-hand menu and click on ```Create Client```. Select ```Desktop app``` as the authentication type, provide a name, and click ```Create```. Once ready, download ```credentials.json``` file and store it securely in the ```~/.credentials``` directory, within the root of ```mcp-toolbox-for-google-workspace``` repo.
-
-To run an MCP server locally on your system and listen for messages from MCP hosts, use the following uv command:
-
-```shell
-uv run path/to/server.py --credentials path/to/credentials.json
-```
-
-**Example:** If you want to run the Google Drive server locally, run cmd: ```uv run src/mcp_server/google_drive/server.py```
-
-
-## One-Click Claude for Desktop Installation (Recommended)
-
-You can easily install the **MCP servers** of your choice using our ```desktop extensions```. Begin by downloading the latest desktop extension for your preferred Google Workspace service from our [GitHub Releases](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.1.0) page. Next, install the MCP extension by either double-clicking the file to open it in Claude for Desktop or by dragging the extension directly into the application; the app will then launch and display a dialog box prompting you to install the mcp server to your app
-
-Click ```Install``` in the **top-right** corner, and if your operating system requests confirmation, click ```Install``` again. Next, browse and select your oauth ```credentials.json``` file and click Save. If the extension is not already enabled, toggle the switch to activate it. After completing these steps, the server will be ready for use. To start using it, simply open a new Claude chat, and enter any prompt that requires calling **one or more tools** available within the server you've installed.
-
-![Setup MCP Server Extension](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_extensions/google_drive_extension_setup_install.png)
-![Select OAuth Credentials for MCP Server](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_extensions/google_drive_extension_setup_select_credentials.png)
-
-
-## Test using MCP Inspector
-
-Alternatively, you can test the MCP server with MCP Inspector using the command: ```uv run mcp dev <path-to-server>```
-Once the MCP Inspector is running, ensure the **Command** field is set to ```uv``` and update the **Arguments** field from the left pane to use command ```run src/mcp_server/<service-name>/server.py --credentials <path-to-credentials.json>```
-
-Replace ```<service-name>``` with the service being tested (e.g. gmail), and ```<path-to-credentials.json>``` with the path to your OAuth credentials file (```credentials.json```). Next, expand Configurations and set the Request Timeout to ```100000```
-
-Click on ```Connect``` to start testing the server. Then, go to the Tools tab to try the different tools available on the server.
-
-![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/fetch_file_content_mcp_inspector.png)
-![Delete file from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/delete_file_mcp_inspector.png)
-
-
-## Claude for Desktop Setup (Legacy)
 
 To use the MCP servers with ```Claude for Desktop```, first install the MCP server locally using the following uv command:
 
@@ -162,10 +142,31 @@ For example, if you have cloned the MCP Toolbox repo to your Desktop and want to
 }
 ```
 
+To run an MCP server locally on your system and listen for messages from MCP hosts, use the following uv command:
+
+```shell
+uv run path/to/server.py --credentials path/to/credentials.json
+```
+
+**Example:** If you want to run the Google Drive server locally, run cmd: ```uv run src/mcp_server/google_drive/server.py```
+
 ![List MCP servers](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/list_servers_on_claude_for_desktop.png)
 ![Create file in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/create_file_in_google_drive.png)
 ![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/fetch_file_content_from_google_drive.png)
 ![Delete file and empty trash in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/delete_file_and_empty_trash_in_google_drive.png)
+
+
+## Test using MCP Inspector
+
+Alternatively, you can test the MCP server with MCP Inspector using the command: ```uv run mcp dev <path-to-server>```
+Once the MCP Inspector is running, ensure the **Command** field is set to ```uv``` and update the **Arguments** field from the left pane to use command ```run src/mcp_server/<service-name>/server.py --credentials <path-to-credentials.json>```
+
+Replace ```<service-name>``` with the service being tested (e.g. gmail), and ```<path-to-credentials.json>``` with the path to your OAuth credentials file (```credentials.json```). Next, expand Configurations and set the Request Timeout to ```100000```
+
+Click on ```Connect``` to start testing the server. Then, go to the Tools tab to try the different tools available on the server.
+
+![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/fetch_file_content_mcp_inspector.png)
+![Delete file from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/delete_file_mcp_inspector.png)
 
 
 ## Example Usage
