@@ -43,7 +43,9 @@ This project is licensed under the Apache-2.0 License and is maintained as an op
 
 ## Installation and Setup
 
-Before you begin, ensure that Python (>=3.13), Node.js, and npm are installed on your system. You should also have a Google Cloud project set up & a Google Workspace, or personal Google account ready for connecting with the server
+<p align="justify">
+Before you begin, ensure that <a href="https://www.python.org/downloads/">Python</a> (>=3.13), <a href="https://nodejs.org/en/download">Node.js</a>, and <a href="https://docs.astral.sh/uv/getting-started/installation/">uv</a> are installed on your system. You should also have a Google Cloud project set up & a Google Workspace, or personal Google account ready for connecting with the server
+</p>
 
 ![Send Email in Gmail](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/gmail_demo/send_email_in_gmail.png)
 
