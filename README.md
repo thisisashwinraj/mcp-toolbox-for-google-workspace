@@ -144,6 +144,11 @@ For example, if you have cloned the MCP Toolbox repo to your Desktop and want to
 }
 ```
 
+![List MCP servers](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/list_servers_on_claude_for_desktop.png)
+![Create file in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/create_file_in_google_drive.png)
+![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/fetch_file_content_from_google_drive.png)
+<!--![Delete file and empty trash in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/delete_file_and_empty_trash_in_google_drive.png)-->
+
 To run an MCP server locally on your system and listen for messages from MCP hosts, use the following uv command:
 
 ```shell
@@ -151,11 +156,6 @@ uv run path/to/server.py --credentials path/to/credentials.json
 ```
 
 **Example:** If you want to run the Google Drive server locally, run cmd: ```uv run src/mcp_server/google_drive/server.py```
-
-![List MCP servers](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/list_servers_on_claude_for_desktop.png)
-![Create file in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/create_file_in_google_drive.png)
-![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/fetch_file_content_from_google_drive.png)
-![Delete file and empty trash in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/delete_file_and_empty_trash_in_google_drive.png)
 
 
 ## Test using MCP Inspector
