@@ -44,15 +44,26 @@ This project is licensed under the Apache-2.0 License and is maintained as an op
 ## Installation and Setup
 
 <p align="justify">
-Before you begin, ensure that <a href="https://www.python.org/downloads/">Python</a> (>=3.13), <a href="https://nodejs.org/en/download">Node.js</a>, and <a href="https://docs.astral.sh/uv/getting-started/installation/">uv</a> are installed on your system. You should also have a Google Cloud project set up & a Google Workspace, or personal Google account ready for connecting with the server
+<b>Before you Begin</b>: Ensure that <a href="https://www.python.org/downloads/">Python</a> (>=3.13), <a href="https://nodejs.org/en/download">Node.js</a>, and <a href="https://docs.astral.sh/uv/getting-started/installation/">uv</a> are installed on your system. You should also have a Google Cloud project set up & a Google Workspace, or personal Google account ready for connecting with the server
 </p>
 
 ![Send Email in Gmail](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/gmail_demo/send_email_in_gmail.png)
 
-### Configure OAuth-2.0 Credentials
+
+### Configure OAuth 2.0 Credentials
+
 Next you need to create OAuth 2.0 credentials in the GCP Console. Start by navigating to the [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent) in the Google Cloud Console. Click ```Get Started```, and provide the app information. For the ```audience```, choose **Internal** if you are using Google Workspace or **External** for a personal account and enter your contact information. Click ```Create```
 
 After the OAuth consent screen is ready, select ```Clients``` from the left-hand menu and click on ```Create Client```. Select ```Desktop app``` as the authentication type, provide a name, and click ```Create```. Once ready, download ```credentials.json``` file and store it securely in a safe location of your choice. You will need this later for authenticating to Workspace APIs
+
+
+### Enable Google Workspace APIs
+
+Before you can access any Google Workspace service, you need to enable the respective APIs from your GCP console.
+
+<p align="justify">
+For example, if you want to interact with Google Drive, navigate to the search bar, type <code>Google Drive API</code> and select it from the results. Click <code>Enable</code> to make the Drive API available for your project. Repeat this process for other APIs you want to use, such as Gmail, Calendar etc. Each API must be explicitly <b>enabled</b> before your app can make requests.
+</p>
 
 
 ## One-Click Claude for Desktop Installation (Recommended)
