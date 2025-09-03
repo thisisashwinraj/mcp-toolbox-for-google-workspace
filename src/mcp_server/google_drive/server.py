@@ -189,11 +189,11 @@ async def create_file(
     enforce_single_parent: Annotated[
         Optional[bool],
         Field(description="Whether the file must have a single parent folder")
-    ] = False,
+    ] = None,
     use_content_as_indexable_text: Annotated[
         Optional[bool],
         Field(description="Whether to use the file content as indexable text")
-    ] = False
+    ] = None
 ) -> Dict[str, str]:
     """
     Tool to create a new file in the user's drive with the specified metadata.
@@ -658,11 +658,11 @@ async def copy_file(
     parent_folder_id: Annotated[
         Optional[str],
         Field(description="Optional ID of the folder to place the file in")
-    ] = None,    
+    ] = None,
     enforce_single_parent: Annotated[
         Optional[bool],
         Field(description="Whether the file must have a single parent folder")
-    ] = False,
+    ] = None,
 ) -> Dict[str, str]:
     """
     Tool to create a copy of an existing file in the user's Google Drive.
