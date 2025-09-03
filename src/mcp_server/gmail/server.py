@@ -47,9 +47,9 @@ mcp = FastMCP(
 @handle_gmail_exceptions
 async def get_profile(
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",
+    ],
 ) -> Dict[str, Union[str, Dict[str, Union[str, int]]]]:
     """
     Tool to retrieve the Gmail profile of a user.
@@ -59,9 +59,9 @@ async def get_profile(
     authenticated user is retrieved.
 
     Args:
-        user_id (Optional[str]): Email ID of the profile to be retrieved.
+        user_id (str): User ID of the profile to be retrieved.
             - Use "me" to fetch the profile of the authenticated user.
-            - Must be a valid email format if not "me". Defaults to "me".
+            - Must be a valid email format if not "me".
             - Example: "user@example.com"
 
     Returns:
@@ -108,9 +108,9 @@ async def get_profile(
 @handle_gmail_exceptions
 async def list_messages(
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",    
+    ],
     query: Annotated[
         Optional[str],
         Field(description="Free text search terms to filter messages by.")
@@ -118,11 +118,11 @@ async def list_messages(
     max_results: Annotated[
         Optional[int],
         Field(description="Maximum number of messages to return", ge=1, le=100)
-    ] = 100,
+    ] = None,
     include_spam_and_trash: Annotated[
         Optional[bool],
         Field(description="Whether to include messages from spam and trash.")
-    ] = False
+    ] = None
 ) -> Dict[str, Union[str, int, List[Dict[str, Any]], Dict[str, Any]]]:
     """
     Tool to list email messages from the user's gmail account.
@@ -132,12 +132,11 @@ async def list_messages(
     IDs, and the maximum number of results to fetch.
 
     Args:
-        user_id (str): User ID or email address. Defaults to "me".
+        user_id (str): User ID or email address.
             - Use "me" to fetch messages for the authenticated user.
             - Must be a valid email format if not "me".
             - Example: "user@example.com"
         max_results (Optional[int]): Maximum number of messages to return.
-            - Defaults to 100 if not specified.
             - Example: 15
         include_spam_and_trash (Optional[bool]): Whether to include messages 
             from `SPAM` and `TRASH` in the results.
@@ -197,13 +196,13 @@ async def get_email_message(
         Field(description="Unique ID of the Gmail message to retrieve.")
     ],
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",
+    ],
     format: Annotated[
         Optional[registry.GMAIL_MESSAGE_FORMAT],
         Field(description="Format to return the message in.")
-    ] = "full",
+    ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
     """
     Tool to retrieve a specific Gmail message from the user's gmail account.
@@ -307,7 +306,7 @@ async def send_message(
     as CC, BCC, and thread ID.
 
     Args:
-        user_id (Optional[str]): The sender's email address.
+        user_id (str): The sender's email address.
             - Use "me" to send from the authenticated user's account.
             - Must be a valid email format if not "me". Defaults to "me".
             - Example: "sender@example.com"
@@ -459,9 +458,9 @@ async def modify_message_label(
         Field(description="Unique ID of the Gmail message to modify.")
     ],
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",
+    ],
     add_labels: Annotated[
         Optional[List[str]],
         Field(description="List of label IDs to add to the message.")
@@ -479,10 +478,10 @@ async def modify_message_label(
     Gmail account and the target message ID to perform this operation.
 
     Args:
-        user_id (Optional[str]): The user's email address.
+        user_id (str): The user's email address.
             - Use "me" to refer to the authenticated user's account.
             - Must be a valid email format if not "me". Defaults to "me".
-            - Example: "me" or "user@example.com"
+            - Example: "me"
         message_id (str): The unique ID of the Gmail message to update.
             - Example: "17c693d97f54a2b5"
         add_labels (Optional[List[str]]): List of label IDs to add.
@@ -544,9 +543,9 @@ async def trash_message(
         Field(description="Unique ID of the Gmail message to trash.")
     ],
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",
+    ]
 ) -> Dict[str, str]:
     """
     Tool to delete a gmail message and move it to the trash folder. 
@@ -554,9 +553,9 @@ async def trash_message(
     This tool deletes the message and moves it to the trashed folder. Trashed
     messages remain in the user's account until they are either permanently
     deleted or restored by the user.
-    
+
     Args:
-        user_id (Optional[str]): The user's email address.
+        user_id (str): The user's email address.
             - Use "me" to refer to the authenticated user's account.
             - Must be a valid email format if not "me". Defaults to "me".
             - Example: "me" or "user@example.com"
@@ -606,9 +605,9 @@ async def untrash_message(
         Field(description="Unique ID of the Gmail message to recover.")
     ],
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",
+    ],
 ) -> Dict[str, str]:
     """
     Tool to recover a gmail message from the trash folder.
@@ -618,9 +617,9 @@ async def untrash_message(
     deleted or trashed by the user.
 
     Args:
-        user_id (Optional[str]): The user's email address.
+        user_id (str): The user's email address.
             - Use "me" to refer to the authenticated user's account.
-            - Must be a valid email format if not "me". Defaults to "me".
+            - Must be a valid email format if not "me".
             - Example: "me" or "user@example.com"
         message_id (str): The unique ID of the Gmail message to recover.
             - Example: "17c693d97f54a2b5"
@@ -664,7 +663,7 @@ async def untrash_message(
 @handle_gmail_exceptions
 async def list_drafts(
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
     ],
     query: Annotated[
@@ -674,11 +673,11 @@ async def list_drafts(
     max_results: Annotated[
         Optional[int],
         Field(description="Maximum number of drafts to return.", le=100, ge=1)
-    ] = 10,
+    ] = None,
     include_spam_and_trash: Annotated[
         Optional[bool],
         Field(description="Whether to include drafts from spam and trash.")
-    ] = False
+    ] = None
 ) -> Dict[str, Union[str, List[Dict[str, Any]]]]:
     """
     Tool to list draft messages from a user's Gmail account.
@@ -696,12 +695,12 @@ async def list_drafts(
             - Supports standard Gmail search syntax. Defaults to None.
             - Example: "has:attachment"
         max_results (Optional[int]): Maximum number of drafts to return.
-            - Must be between 1 and 100. Defaults to 10.
+            - Must be between 1 and 100.
             - Example: 15
         include_spam_and_trash (Optional[bool]): Whether to include drafts from 
             spam and trash.
-            - Defaults to False.
-    
+            - Example: True
+
     Returns:
         Dict[str, Union[str, List[Dict[str, Any]]]]: A dictionary containing:
             - 'status' (str): "success", "not_found", or "error".
@@ -778,11 +777,11 @@ async def get_draft(
     user_id: Annotated[
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me",
+    ],
     format: Annotated[
         Optional[registry.GMAIL_MESSAGE_FORMAT],
         Field(description="Format to return the draft in.")
-    ] = "full",
+    ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
     """
     Tool to retrieve a specific draft from a user's Gmail account.
@@ -857,9 +856,9 @@ async def send_draft(
         Field(description="ID of the draft message to be sent.")
     ],
     user_id: Annotated[
-        Optional[str],
+        str,
         Field(description="User's email id. Use 'me' for authenticated users.")
-    ] = "me"
+    ]
 ) -> Dict[str, Union[str, Dict[str, Any], List[str]]]:
     """
     Tool to send the specified, existing draft to the recipients in the To, Cc, 
@@ -874,7 +873,7 @@ async def send_draft(
             - Use "me" to fetch drafts of the authenticated user.
             - Must be a valid email format if not "me". Defaults to "me".
             - Example: "user@example.com"
-        draft_id (Optional[str]): The unique ID of the draft to be sent.
+        draft_id (str): The unique ID of the draft to be sent.
             - Example: "123draft456"
 
     Returns:
