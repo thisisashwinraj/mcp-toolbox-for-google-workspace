@@ -51,9 +51,9 @@ mcp = FastMCP(
 @handle_google_calendar_exceptions
 async def list_calendars(
     max_results: Annotated[
-        Optional[int],
+        int,
         Field(description="Maximum number of entries per page.", ge=1, le=250)
-    ] = 100,
+    ],
     min_access_role: Annotated[
         Optional[registry.CALENDAR_ACCESS_ROLES],
         Field(description="Minimum access role for user in returned entries.")
@@ -61,11 +61,11 @@ async def list_calendars(
     show_deleted: Annotated[
         Optional[bool],
         Field(description="Whether to include deleted calendar list entries.")
-    ] = False,
+    ] = None,
     show_hidden: Annotated[
         Optional[bool],
         Field(description="Whether to include hidden calendar list entries.")
-    ] = False,
+    ] = None,
 ) -> Dict[str, Union[str, List[Dict[str, Union[str, bool]]]]]:
     """
     Tool to list the calendars in an authenticated user's Google Calendar based 
@@ -85,11 +85,9 @@ async def list_calendars(
             - Valid values: "freeBusyReader", "reader", "writer", "owner"
             - Example: "reader"
         show_deleted (Optional[bool]): Whether to include deleted calendars.
-            - If not provided, defaults to False.
             - Example: True
         show_hidden (Optional[bool]): Whether to include hidden calendars.
-            - If not provided, defaults to False.
-            - Example: True
+            - Example: False
 
     Returns:
         Dict[str, Union[str, List[Dict[str, Union[str, bool]]]]]: A dictionary 
@@ -530,7 +528,6 @@ async def list_events(
             - Range: 1 to 250. Defaults to 250 if not specified.
             - Example: 50
         show_hidden_invitations (Optional[bool]): Include hidden invitations
-            - Defaults to False if not specified.
             - Example: True
         show_deleted (Optional[bool]): Whether to include deleted events
             - Example: False
@@ -745,11 +742,11 @@ async def create_event(
     time_zone: Annotated[
         Optional[str],
         Field(description="The time zone of the event.")
-    ] = "UTC",
+    ] = None,
     add_google_meet_link: Annotated[
         Optional[bool],
         Field(description="Whether to add a Google Meet link to the event.")
-    ] = False,
+    ] = None,
     attendees: Annotated[
         Optional[List[str]],
         Field(description="The list of attendee email addresses.")
@@ -761,23 +758,23 @@ async def create_event(
     visibility: Annotated[
         Optional[registry.CALENDAR_EVENT_VISIBILITY],
         Field(description="The visibility of the event in the calendar.")
-    ] = "default",
+    ] = None,
     transparency: Annotated[
         Optional[registry.CALENDAR_EVENT_TRANSPARENCY],
         Field(description="Whether the event blocks calendar time.")
-    ] = "opaque",
+    ] = None,
     guests_can_invite_others: Annotated[
         Optional[bool],
         Field(description="Whether attendees can invite others to the event.")
-    ] = False,
+    ] = None,
     guests_can_see_other_guests: Annotated[
         Optional[bool],
         Field(description="Whether attendees can see each other.")
-    ] = False,
+    ] = None,
     send_updates: Annotated[
         Optional[registry.CALENDAR_EVENT_SEND_UPDATES],
         Field(description="Whether to send updates to attendees.")
-    ] = "none",
+    ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
     """
     Tool to create a new event in the user's Google Calendar account.
@@ -798,10 +795,9 @@ async def create_event(
         end_time (str): End timestamp of the event in valid RFC3339 format
             - Example: "2025-08-10T11:00:00+05:30"
         time_zone (Optional[str]): Time zone to apply to the start and end time
-            - If invalid or unspecified, defaults to the calendar's time zone
+            - If invalid or unspecified, defaults to UTC
             - Example: "Asia/Kolkata"
         add_google_meet_link (Optional[bool]): Whether to add Google Meet link
-            - Defaults to False if not specified.
             - Example: True
         location (Optional[str]): Physical or virtual location of the event
             - Example: "Conference Room A"
@@ -815,14 +811,17 @@ async def create_event(
             - DTSTART and DTEND lines are not allowed in this field.
             - Example: ["RRULE:FREQ=DAILY;COUNT=2"]
         visibility (Optional[str]): Visibility of the event in the calendar
+            - Defaults to "opaque"
             - Example: "public"
         guests_can_invite_others (Optional[bool]): If guests can invite others
-            - Defaults to False if not specified.
+            - Example: True
         guests_can_see_other_guests (Optional[bool]): If guests can see others
-            - Defaults to False if not specified.
+            - Example: False
         transparency (Optional[str]): Whether the event blocks calendar time
             - "opaque" blocks time; "transparent" does not. Defaults to opaque
-        send_updates (Optional[str]): Controls the notification behavior.
+            - Example: "opaque"
+        send_updates (Optional[str]): Controls the update notification behavior
+            - Defaults to "none"
             - Example: "all"
 
     Returns:
@@ -861,8 +860,13 @@ async def create_event(
             "status": "error",
             "message": "start_time must be before end_time."
         }
-
+    
+    time_zone = "UTC" if not time_zone else time_zone.strip()
     time_zone = time_zone if time_zone in all_timezones_set else "UTC"
+
+    send_updates = "none" if not send_updates else send_updates.strip()
+    transparency = "opaque" if not transparency else transparency.strip()
+    visibility = "default" if not visibility else visibility.strip()
 
     event_body = {
         "summary": summary.strip(),
@@ -970,7 +974,7 @@ async def update_event(
     time_zone: Annotated[
         Optional[str],
         Field(description="The time zone of the event.")
-    ] = "UTC",
+    ] = None,
     recurrence: Annotated[
         Optional[List[str]],
         Field(description='Recurrence rules as specified in RFC5545 format.')
@@ -978,23 +982,23 @@ async def update_event(
     visibility: Annotated[
         Optional[registry.CALENDAR_EVENT_VISIBILITY],
         Field(description="The visibility of the event in the calendar.")
-    ] = "default",
+    ] = None,
     transparency: Annotated[
         Optional[registry.CALENDAR_EVENT_TRANSPARENCY],
         Field(description="Whether the event blocks calendar time.")
-    ] = "opaque",
+    ] = None,
     guests_can_invite_others: Annotated[
         Optional[bool],
         Field(description="Whether attendees can invite others to the event.")
-    ] = False,
+    ] = None,
     guests_can_see_other_guests: Annotated[
         Optional[bool],
         Field(description="Whether attendees can see each other.")
-    ] = False,
+    ] = None,
     send_updates: Annotated[
         Optional[registry.CALENDAR_EVENT_SEND_UPDATES],
         Field(description="Whether to send update notification to attendees.")
-    ] = "all"
+    ] = None
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
     """
     Tool to update an existing event in the user's Google Calendar account.
@@ -1035,9 +1039,9 @@ async def update_event(
         transparency (Optional[str]): Whether the event blocks calendar time
             - "opaque" blocks time; "transparent" does not. Defaults to opaque
         guests_can_invite_others (Optional[bool]): If guests can invite others
-            - Defaults to False if not specified.
+            - Example: True
         guests_can_see_other_guests (Optional[bool]): If guests can see others
-            - Defaults to False if not specified.
+            - Example: False
         send_updates (Optional[str]): Controls the notification behavior.
             - Example: "all"
 
@@ -1146,7 +1150,7 @@ async def delete_event(
     send_updates: Annotated[
         Optional[registry.CALENDAR_EVENT_SEND_UPDATES],
         Field(description="Whether to send update notification to attendees.")
-    ] = "all"
+    ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
     """
     Deletes an event from a user's specified Google Calendar account.
@@ -1175,6 +1179,8 @@ async def delete_event(
 
     if not event_id.strip():
         return {"status": "error", "message": "Event ID cannot be empty."}
+
+    send_updates = "none" if not send_updates else send_updates.strip()
 
     service = await async_init_calendar()
 
