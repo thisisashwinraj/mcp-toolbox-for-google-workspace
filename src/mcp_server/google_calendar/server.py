@@ -190,11 +190,11 @@ async def create_calendar(
             On failure:
             - 'message' (str): Description of the error
     """
-    if not summary.strip():
+    if not summary or not summary.strip():
         return {
             "status": "error", "message": "Calendar summary cannot be empty."
         }
-    
+
     if time_zone:
         time_zone = time_zone.strip()
 
@@ -208,7 +208,10 @@ async def create_calendar(
     else:
         time_zone = "UTC"
     
-    calendar_body = {"summary": summary.strip(), "timeZone": time_zone}
+    calendar_body = {
+        "summary": summary.strip(), 
+        "timeZone": time_zone
+    }
 
     if description and description.strip():
         calendar_body["description"] = description.strip()
@@ -266,7 +269,7 @@ async def get_calendar(
             On failure/not found:
             - 'message' (str, optional): Additional details or error messages.
     """
-    if not calendar_id.strip(): 
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
     
     service = await async_init_calendar()
@@ -345,7 +348,7 @@ async def update_calendar(
             "message": "No fields provided to update the calendar."
         }
 
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
 
     calendar_id = calendar_id.strip()
@@ -420,7 +423,7 @@ async def delete_calendar(
             - 'status' (str): "success" or "error"
             - 'message' (str): Confirmation meassage, or reason for failure
     """
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
 
     service = await async_init_calendar()
@@ -556,10 +559,10 @@ async def list_events(
             - 'message' (str): Additional details or error messages.
 
     """
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
     
-    query = query.strip() if query else None
+    query = query.strip() if query and query.strip() else None
 
     if time_min and not validate_rfc3339_timestamp(time_min):
         return {
@@ -678,10 +681,10 @@ async def get_event(
             On failure/not found:
             - 'message' (str): Any relevant messages or error info
     """
-    if not calendar_id.strip(): 
+    if not calendar_id or not calendar_id.strip(): 
         return {"status": "error", "message": "Calendar ID cannot be empty."}
 
-    if not event_id.strip():
+    if not event_id or not event_id.strip():
         return {"status": "error", "message": "Event ID cannot be empty."}
     
     service = await async_init_calendar()
@@ -833,10 +836,10 @@ async def create_event(
             - On failure:
                 - 'message' (str): Error message or explanation
     """
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
     
-    if not summary.strip():
+    if not summary or not summary.strip():
         return {"status": "error", "message": "Event summary cannot be empty."}
 
     if start_time and not validate_rfc3339_timestamp(start_time):
@@ -860,8 +863,8 @@ async def create_event(
             "status": "error",
             "message": "start_time must be before end_time."
         }
-    
-    time_zone = "UTC" if not time_zone else time_zone.strip()
+
+    time_zone = (time_zone or "UTC").strip()
     time_zone = time_zone if time_zone in all_timezones_set else "UTC"
 
     send_updates = "none" if not send_updates else send_updates.strip()
@@ -1054,10 +1057,10 @@ async def update_event(
             - On failure:
                 - 'message' (str): Error message or explanation
     """
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
 
-    if not event_id.strip():
+    if not event_id or not event_id.strip():
         return {"status": "error", "message": "Event ID cannot be empty."}
     
     event_body = {}
@@ -1083,7 +1086,7 @@ async def update_event(
             "dateTime": start_time,
             "timeZone": time_zone if time_zone in all_timezones_set else "UTC"
         }
-    
+
     if end_time:
         if not validate_rfc3339_timestamp(end_time):
             return {
@@ -1091,7 +1094,7 @@ async def update_event(
                 "message": f"Invalid end_time format: '{end_time}'. "
                         "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
             }
-        
+
         event_body["end"] = {
             "dateTime": end_time,
             "timeZone": time_zone if time_zone in all_timezones_set else "UTC"
@@ -1174,13 +1177,13 @@ async def delete_event(
             - "status" (str): "success" if deletion successful, else "error"
             - "message" (str): Descriptive message about the operation outcome
     """
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
 
-    if not event_id.strip():
+    if not event_id or not event_id.strip():
         return {"status": "error", "message": "Event ID cannot be empty."}
 
-    send_updates = "none" if not send_updates else send_updates.strip()
+    send_updates = (send_updates or "none").strip()
 
     service = await async_init_calendar()
 
@@ -1226,7 +1229,7 @@ async def clear_primary_calendar_events(
             - 'status' (str): "success" or "error".
             - 'message' (str): Description of the result or reason for failure.        
     """
-    if not calendar_id.strip():
+    if not calendar_id or not calendar_id.strip():
         return {"status": "error", "message": "Calendar ID cannot be empty."}
 
     service = await async_init_calendar()
@@ -1238,8 +1241,8 @@ async def clear_primary_calendar_events(
     if not calendar.get("primary", False):
         return {
             "status": "error",
-            "message": """Cannot clear a secondary calendar. Only primary 
-            calendars can be cleared."""
+            "message": """Cannot clear secondary calendar. Only the primary 
+            calendar can be cleared."""
         }
 
     await asyncio.to_thread(

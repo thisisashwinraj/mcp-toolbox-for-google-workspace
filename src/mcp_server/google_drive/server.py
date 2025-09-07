@@ -121,9 +121,8 @@ async def list_files(
 
     VALID_SPACES = {'drive', 'appDataFolder', 'photos'}
 
-    service = await async_init_drive()
-
     query = None
+
     if keyword:
         escaped_keyword = keyword.replace('"', '\\"')
         query = f'name contains "{escaped_keyword}"'
@@ -148,6 +147,8 @@ async def list_files(
                 "message": f"invalid spaces: {invalid_spaces}"
             }
 
+    service = await async_init_drive()
+
     results = await asyncio.to_thread(
         lambda: service.files()
             .list(
@@ -169,7 +170,7 @@ async def list_files(
 
 
 @mcp.tool(
-    title="Create a new file in the specified folder in user's Google Drive account.",
+    title="Create a new file in the specified folder in user's Google Drive.",
     description=registry.CREATE_NEW_FILE_TOOL_DESCRIPTION
 )
 @handle_google_drive_exceptions
@@ -234,10 +235,10 @@ async def create_file(
             On failure:
             - 'message' (str): Description of the error
     """
-    if not file_name.strip():
+    if not file_name or not file_name.strip():
         return {"status": "error", "message": "file name cannot be empty"}
 
-    if not target_mime_type.strip():
+    if not target_mime_type or not target_mime_type.strip():
         return {"status": "error", "message": "file MIME type is required"}
 
     file_metadata = {
@@ -299,10 +300,11 @@ async def fetch_workspace_file_content(
             On failure:
             - 'message' (str): Error message if operation failed
     """
-    if not file_id.strip() or not export_mime_type.strip():
-        return {
-            "status": "error", 
-            "message": "file id and export mime type are required"}
+    if not file_id or not file_id.strip():
+        return {"status": "error", "message": "File id cannot be empty"}
+
+    if not export_mime_type or not export_mime_type.strip():
+        return {"status": "error", "message": "Export MIME type is required"}
 
     service = await async_init_drive()
 
@@ -365,7 +367,7 @@ async def fetch_file_content(
             On failure:
             - 'message' (str): Error message (if status is "error")
     """
-    if not file_id.strip():
+    if not file_id or not file_id.strip():
         return {"status": "error", "message": "file id is required"}
 
     service = await async_init_drive()
@@ -400,7 +402,9 @@ async def fetch_file_content(
         for key, export_mime in mime_map.items():
             if key in mime_type:
                 return await fetch_workspace_file_content(
-                    file_id, export_mime)
+                    file_id, 
+                    export_mime
+                )
 
         return {
             "status": "error",
@@ -408,6 +412,7 @@ async def fetch_file_content(
         }
 
     request = service.files().get_media(fileId=file_id)
+
     file_handle = io.BytesIO()
     downloader = MediaIoBaseDownload(file_handle, request)
 
@@ -473,7 +478,7 @@ async def update_file_metadata(
     """
     ALLOWED_METADATA_FIELDS = {"name", "description", "starred"}
 
-    if not file_id.strip():
+    if not file_id or not file_id.strip():
         return {"status": "error", "message": "file id is required"}
 
     if not metadata:
@@ -482,7 +487,8 @@ async def update_file_metadata(
     if not isinstance(metadata, dict):
         return {
             "status": "error", 
-            "message": f"metadata must be a valid dictionary"}
+            "message": f"metadata must be a valid dictionary"
+        }
 
     service = await async_init_drive()
 
@@ -490,7 +496,8 @@ async def update_file_metadata(
     parents_to_remove = metadata.get("removeParents", None)
 
     metadata_body = {
-        k: v for k, v in metadata.items() if k in ALLOWED_METADATA_FIELDS}
+        k: v for k, v in metadata.items() if k in ALLOWED_METADATA_FIELDS
+    }
 
     fields_to_return = (
         "id, name, mimeType, webViewLink, description, starred, "
@@ -503,25 +510,21 @@ async def update_file_metadata(
             fields=fields_to_return,
             supportsAllDrives=True,
             addParents=(
-                ", ".join(parents_to_add) 
-                if parents_to_add 
-                else None),
+                ", ".join(parents_to_add) if parents_to_add else None
+            ),
             removeParents=(
-                ", ".join(parents_to_remove) 
-                if parents_to_remove 
-                else None),
+                ", ".join(parents_to_remove) if parents_to_remove else None
+            ),
         ).execute()
     )
 
     updated_file['addedParents'] = (
-        ", ".join(parents_to_add) 
-        if parents_to_add 
-        else None)
+        ", ".join(parents_to_add) if parents_to_add else None
+    )
     
     updated_file['removedParents'] = (
-        ", ".join(parents_to_remove) 
-        if parents_to_remove 
-        else None)
+        ", ".join(parents_to_remove) if parents_to_remove else None
+    )
 
     return {"status": "success", "updated_file_metadata": updated_file}
 
@@ -565,11 +568,14 @@ async def delete_file(
 
     await asyncio.to_thread(
         lambda: service.files().delete(
-            fileId=file_id, supportsAllDrives=True).execute())
+            fileId=file_id, supportsAllDrives=True
+        ).execute()
+    )
 
     return {
         "status": "success", 
-        "message": f"file with id '{file_id}' deleted successfully"}
+        "message": f"file with id '{file_id}' deleted successfully"
+    }
 
 
 @mcp.tool(
@@ -626,9 +632,12 @@ async def fetch_file_metadata(
         On failure:
         - 'message' (str): Reason for the failure.
     """
-    service = await async_init_drive()
+    if not file_id or not file_id.strip():
+        return {"status": "error", "message": "file id is required"}
 
     metadata = ", ".join(metadata) if metadata else "*"
+
+    service = await async_init_drive()
 
     file_metadata = await asyncio.to_thread(
         lambda: service.files().get(fileId=file_id, fields=metadata).execute())
@@ -638,7 +647,8 @@ async def fetch_file_metadata(
 
     return {
         "status": "success", 
-        "message": "No metadata found for the specified fields"}
+        "message": "No metadata found for the specified fields"
+    }
 
 
 @mcp.tool(
@@ -694,15 +704,15 @@ async def copy_file(
         On failure:
         - 'message' (str): Reason for the failure.
     """
-    if not file_id.strip():
+    if not file_id or not file_id.strip():
         return {"status": "error", "message": "File ID is required"}
 
     copy_metadata = {}
 
-    if new_name:
+    if new_name and new_name.strip():
         copy_metadata["name"] = new_name.strip()
 
-    if parent_folder_id:
+    if parent_folder_id and parent_folder_id.strip():
         copy_metadata["parents"] = [parent_folder_id]
 
     service = await async_init_drive()
@@ -745,9 +755,14 @@ async def empty_trash() -> Dict[str, str]:
     """
     service = await async_init_drive()
 
-    await asyncio.to_thread(lambda: service.files().emptyTrash().execute())
+    await asyncio.to_thread(
+        lambda: service.files().emptyTrash().execute()
+    )
 
-    return {"status": "success", "message": "trash emptied successfully"}
+    return {
+        "status": "success", 
+        "message": "trash emptied successfully"
+    }
 
 
 if __name__ == "__main__":

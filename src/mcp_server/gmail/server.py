@@ -80,7 +80,7 @@ async def get_profile(
             - 'status' (str): "error"
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
@@ -136,14 +136,14 @@ async def list_messages(
             - Use "me" to fetch messages for the authenticated user.
             - Must be a valid email format if not "me".
             - Example: "user@example.com"
+        query (Optional[str]): Only return messages matching specified query.
+            - Supports the same query format as Gmail's search box.
+            - Example: 'from:user@example.com is:unread'
         max_results (Optional[int]): Maximum number of messages to return.
             - Example: 15
         include_spam_and_trash (Optional[bool]): Whether to include messages 
             from `SPAM` and `TRASH` in the results.
             - Example: True
-        query (Optional[str]): Only return messages matching specified query.
-            - Supports the same query format as Gmail's search box.
-            - Example: 'from:user@example.com is:unread'
 
     Returns:
         Dict[str, Any]: A dictionary containing:
@@ -155,13 +155,13 @@ async def list_messages(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
-    
-    query = query.strip() if query else None
+
+    query = query.strip() if query and query.strip() else None
 
     service = await async_init_gmail()
 
@@ -233,13 +233,13 @@ async def get_email_message(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not message_id.strip():
+    if not message_id or not message_id.strip():
         return {"status": "error", "message": "Message Id cannot be empty."}
 
     service = await async_init_gmail()
@@ -337,19 +337,19 @@ async def send_message(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
-    if not to.strip():
+    if user_id != "me" and not is_valid_email(user_id):
+        return {"status": "error", "message": "Invalid User Id format."}
+
+    if to and not to.strip():
         return {
             "status": "error",
             "message": "Recipient email id cannot be empty."
         }
-    
-    to = re.sub(r"[\(\)\[\]\{\}\<\>]", "", to)
 
-    if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+    to = re.sub(r"[\(\)\[\]\{\}\<\>]", "", to)
 
     valid_to = []
 
@@ -369,17 +369,15 @@ async def send_message(
             "message": "Recipient email id cannot be empty."
         }
 
-    subject = "(No Subject)" if not subject else subject
+    subject = "(No Subject)" if not subject or not subject.strip() else subject
 
     if in_reply_to and not subject.lower().startswith('re:'):
         subject = f"Re: {subject}"
 
     message = MIMEText(body or "")
 
-    if user_id != "me":
-        message["from"] = user_id
-
     message['to'] = to
+    message["from"] = user_id if user_id != "me" else "me"
     message['subject'] = subject
 
     valid_cc = []
@@ -497,19 +495,20 @@ async def modify_message_label(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not message_id.strip():
+    if not message_id or not message_id.strip():
         return {"status": "error", "message": "Message Id cannot be empty."}
 
     body = {}
 
     if add_labels:
         body["addLabelIds"] = add_labels
+
     if remove_labels:
         body["removeLabelIds"] = remove_labels
 
@@ -570,13 +569,13 @@ async def trash_message(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not message_id.strip():
+    if not message_id or not message_id.strip():
         return {"status": "error", "message": "Message Id cannot be empty."}
     
     service = await async_init_gmail()
@@ -632,13 +631,13 @@ async def untrash_message(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not message_id.strip():
+    if not message_id or not message_id.strip():
         return {"status": "error", "message": "Message Id cannot be empty."}
 
     service = await async_init_gmail()
@@ -716,7 +715,7 @@ async def list_drafts(
             On failure:
                 - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
@@ -748,6 +747,7 @@ async def list_drafts(
     for draft in drafts:
         draft_id = draft.get("id")
         message_id = draft.get("message", {}).get("id")
+
         thread_id = draft.get("message", {}).get("threadId")
         label_ids = draft.get("message", {}).get("labelIds", [])
 
@@ -811,13 +811,13 @@ async def get_draft(
             On error:
                 - "message" (str): An error or info message when applicable.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not draft_id.strip():
+    if not draft_id or not draft_id.strip():
         return {"status": "error", "message": "Draft Id cannot be empty."}
 
     service = await async_init_gmail()
@@ -993,15 +993,15 @@ async def create_draft(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
-    
+
     invalid_to_email = []
 
-    if to.strip():
+    if to and to.strip():
         valid_to = []
 
         for email in re.split(r",\s*", to):
@@ -1012,7 +1012,7 @@ async def create_draft(
 
         to = ", ".join(valid_to)
 
-    subject = "(No Subject)" if not subject else subject
+    subject = "(No Subject)" if not subject or not subject.strip() else subject
 
     if in_reply_to and not subject.lower().startswith('re:'):
         subject = f"Re: {subject}"
@@ -1186,13 +1186,13 @@ async def update_draft(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not draft_id.strip():
+    if not draft_id or not draft_id.strip():
         return {"status": "error", "message": "Draft Id cannot be empty."}
     
     service = await async_init_gmail()
@@ -1256,7 +1256,9 @@ async def update_draft(
 
     message["To"] = ", ".join(list(set(existing_to)))
 
-    existing_cc = [e for e in re.split(r",\s*", headers.get("Cc", "")) if e]
+    existing_cc = [
+        cc for cc in re.split(r",\s*", headers.get("Cc", "")) if cc
+    ]
     invalid_cc_email = []
 
     if add_cc:
@@ -1278,7 +1280,9 @@ async def update_draft(
 
     message['Cc'] = ", ".join(list(set(existing_cc)))
 
-    existing_bcc = [e for e in re.split(r",\s*", headers.get("Bcc", "")) if e]
+    existing_bcc = [
+        bcc for bcc in re.split(r",\s*", headers.get("Bcc", "")) if bcc
+    ]
     invalid_bcc_email = []
 
     if add_bcc:
@@ -1373,13 +1377,13 @@ async def delete_draft(
             On failure:
             - 'message' (str): Description of the error.
     """
-    if not user_id.strip():
+    if not user_id or not user_id.strip():
         return {"status": "error", "message": "User Id cannot be empty."}
 
     if user_id != "me" and not is_valid_email(user_id):
         return {"status": "error", "message": "Invalid User Id format."}
 
-    if not draft_id.strip():
+    if not draft_id or not draft_id.strip():
         return {"status": "error", "message": "Draft Id cannot be empty."}
 
     service = await async_init_gmail()
