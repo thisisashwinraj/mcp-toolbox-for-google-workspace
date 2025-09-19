@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Google Drive MCP Server")
+    parser = argparse.ArgumentParser(description="GMail MCP Server")
     parser.add_argument(
         "--credentials",
         type=str,
@@ -37,7 +37,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def _init_gmail() -> Credentials:
+def _init_gmail_service() -> Credentials:
     try:
         PROJECT_ROOT = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "../../..")
@@ -91,5 +91,5 @@ def _init_gmail() -> Credentials:
         ) from error
 
 
-async def async_init_gmail() -> Credentials:
-    return await asyncio.to_thread(_init_gmail)
+async def async_init_gmail_service() -> Credentials:
+    return await asyncio.to_thread(_init_gmail_service)
