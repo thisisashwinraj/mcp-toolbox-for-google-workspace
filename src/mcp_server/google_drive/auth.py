@@ -37,7 +37,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def _init_google_drive() -> Credentials:
+def _init_google_drive_service() -> Credentials:
     try:
         PROJECT_ROOT = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "../../..")
@@ -88,5 +88,5 @@ def _init_google_drive() -> Credentials:
         ) from error
 
 
-async def async_init_drive() -> Credentials:
-    return await asyncio.to_thread(_init_google_drive)
+async def async_init_google_drive_service() -> Credentials:
+    return await asyncio.to_thread(_init_google_drive_service)
