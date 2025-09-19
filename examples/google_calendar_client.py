@@ -29,7 +29,7 @@ load_dotenv()
 GEMINI_MODEL_NAME = "gemini-2.5-flash"
 TEMPERATURE = 0.7
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 google_calendar_mcp_server_params = StdioServerParameters(
     command="uv",
