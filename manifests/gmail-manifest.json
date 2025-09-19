@@ -1,8 +1,8 @@
 {
-  "dxt_version": "0.1",
+  "manifest_version": "0.1",
   "name": "gmail-mcp-server-extension",
   "display_name": "Gmail MCP Server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Gmail MCP server offers a comprehensive set of tools for managing emails and drafts within the user's Gmail account.",
   "author": {
     "name": "Ashwin Raj",
@@ -11,11 +11,9 @@
   "homepage": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/tree/main/src/mcp_server/gmail",
   "documentation": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/README.md",
   "support": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/issues",
-  "icon": ".github/icons/gmail_mcp_server_icon.png",
+  "icon": "icon.png",
   "screenshots": [
-    ".github/gh_readme_assets/demo_claude/gmail_demo/list_and_fetch_emails_from_gmail.png",
-    ".github/gh_readme_assets/demo_claude/gmail_demo/modify_email_labels_in_gmail.png",
-    ".github/gh_readme_assets/demo_claude/gmail_demo/send_email_in_gmail.png"
+    "http://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/gmail_demo"
   ],
   "server": {
     "type": "python",
@@ -50,7 +48,7 @@
       "description": "Send an email message from user's gmail account."
     },
     {
-      "name": "modify_message_label",
+      "name": "modify_message_labels",
       "description": "Modify labels of a message in user's gmail account."
     },
     {
