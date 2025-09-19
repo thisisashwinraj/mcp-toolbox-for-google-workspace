@@ -21,8 +21,8 @@ from typing import Annotated, Any, Dict, List, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
 
-from auth import async_init_calendar
-import registry
+import schema
+from auth import async_init_google_calendar_service
 from utils import (
     handle_google_calendar_exceptions, 
     is_valid_email,
@@ -38,15 +38,17 @@ mcp = FastMCP(
     description="""
     The Google Calendar MCP server offers a comprehensive set of tools for 
     managing calendars and events within a user's Google Calendar account.""",
-    version="0.1.0",
-    instructions=registry.GOOGLE_CALENDAR_MCP_SERVER_INSTRUCTIONS,
-    settings={"initialization_timeout": 120.0}
+    version="0.1.1",
+    instructions=schema.GOOGLE_CALENDAR_MCP_SERVER_INSTRUCTIONS,
+    settings={
+        "initialization_timeout": 1200.0
+    }
 )
 
 
 @mcp.tool(
-    title="List available calendars from user's Google Calendar account.",
-    description=registry.LIST_CALENDARS_TOOL_DESCRIPTION
+    title="List Calendars",
+    description=schema.LIST_CALENDARS_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def list_calendars(
@@ -55,7 +57,7 @@ async def list_calendars(
         Field(description="Maximum number of entries per page.", ge=1, le=250)
     ],
     min_access_role: Annotated[
-        Optional[registry.CALENDAR_ACCESS_ROLES],
+        Optional[schema.CALENDAR_ACCESS_ROLES],
         Field(description="Minimum access role for user in returned entries.")
     ] = None,
     show_deleted: Annotated[
@@ -79,10 +81,11 @@ async def list_calendars(
     Args:
         max_results (Optional[int]): Maximum number of calendars to retrieve.
             - Must be greater than or equal to 1, or less than or equal to 250.
+            - Defaults to 5 internally, if not provided.
             - Example: 10
         min_access_role (Optional[str]): Minimum access level a user must have.
             - If not provided, defaults to 'None' i.e. no restriction.
-            - Valid values: "freeBusyReader", "reader", "writer", "owner"
+            - Valid values: "freeBusyReader", "owner", "reader", "writer"
             - Example: "reader"
         show_deleted (Optional[bool]): Whether to include deleted calendars.
             - Example: True
@@ -92,20 +95,28 @@ async def list_calendars(
     Returns:
         Dict[str, Union[str, List[Dict[str, Union[str, bool]]]]]: A dictionary 
             containing:
-            - 'status' (str): "success", "not_found" or "error"
+            - 'status' (str): "success", "not_found", or "error"
             On success:
-            - 'calendars' (List[Dict]): List of calendar entries with:
+            - 'calendars' (List[Dict]): List of calendar entries with fields:
                 - 'calendar_id' (str): Unique identifier of the calendar
                 - 'summary' (str): Title of the calendar
-                - 'hidden' (str): Whether the calendar is hidden
-                - 'deleted' (str): Whether the calendar is deleted
+                - 'hidden' (bool): Whether the calendar is hidden
+                - 'deleted' (bool): Whether the calendar is deleted
                 - 'primary' (bool): Whether calendar is user's primary calendar
             If not_found:
             - 'message' (str): Message indicating no calendars were found
             On failure:
             - 'message' (str): Description of the error
     """
-    service = await async_init_calendar()
+    CALENDAR_ACCESS_ROLES = ["freeBusyReader", "owner", "reader", "writer"]
+
+    if min_access_role and min_access_role not in CALENDAR_ACCESS_ROLES:
+        return {
+            "status": "error",
+            "message": f"Invalid calendar access role: {min_access_role}"
+        }
+
+    service = await async_init_google_calendar_service()
 
     response = await asyncio.to_thread(
         lambda: service.calendarList().list(
@@ -135,12 +146,15 @@ async def list_calendars(
             "deleted": calendar.get("deleted", False)
         })
 
-    return {"status": "success", "calendars": calendars}
+    return {
+        "status": "success", 
+        "calendars": calendars
+    }
 
 
 @mcp.tool(
-    title="Create a new secondary calendar in user's Google Calendar account.",
-    description=registry.CREATE_CALENDAR_TOOL_DESCRIPTION
+    title="Create Calendar",
+    description=schema.CREATE_CALENDAR_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def create_calendar(
@@ -160,7 +174,7 @@ async def create_calendar(
         Optional[str],
         Field(description="Optional geographic location of the calendar.")
     ] = None,
-) -> Dict[str, Union[str, Dict[str, str]]]:
+) -> Dict[str, str]:
     """
     Tool to create a new secondary calendar in the user's Google Calendar.
 
@@ -171,11 +185,11 @@ async def create_calendar(
     Args:
         summary (str): Title of the calendar to be created.
             - Example: "Team Meetings"
+        description (Optional[str]): Description or notes about the calendar.
+            - Example: "Calendar for weekly syncs"
         time_zone (Optional[str]): IANA time zone for the calendar.
             - If not provided, defaults to 'UTC'.
             - Example: "Asia/Kolkata"
-        description (Optional[str]): Description or notes about the calendar.
-            - Example: "Calendar for weekly syncs"
         location (Optional[str]): Geographic location of the calendar.
             - Example: "New York"
 
@@ -183,7 +197,7 @@ async def create_calendar(
         Dict[str, Union[str, Dict[str, str]]]: A dictionary containing:
             - 'status' (str): "success" or "error"
             On success:
-            - 'calendarId' (str): Unique identifier of the created calendar
+            - 'id' (str): Unique identifier of the created calendar
             - 'summary' (str): Title of the calendar
             - 'timeZone' (str): IANA time zone of the calendar
             - 'calendar_url' (str): Direct link to view the calendar in web UI
@@ -192,7 +206,8 @@ async def create_calendar(
     """
     if not summary or not summary.strip():
         return {
-            "status": "error", "message": "Calendar summary cannot be empty."
+            "status": "error", 
+            "message": "Calendar summary cannot be empty."
         }
 
     if time_zone:
@@ -201,10 +216,11 @@ async def create_calendar(
         if time_zone not in all_timezones_set:
             return {
                 "status": "error",
-                "message": f"Invalid time zone: '{time_zone}'."
-                "Please provide a valid IANA time zone (e.g., Asia/Kolkata)."
+                "message": (
+                    f"Invalid time zone: '{time_zone}'."
+                    "Please provide a valid IANA time zone (e.g. Asia/Kolkata)"
+                )
             }
-
     else:
         time_zone = "UTC"
     
@@ -219,10 +235,12 @@ async def create_calendar(
     if location and location.strip():
         calendar_body["location"] = location.strip()
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
     calendar = await asyncio.to_thread(
-        lambda: service.calendars().insert(body=calendar_body).execute()
+        lambda: service.calendars().insert(
+            body=calendar_body
+        ).execute()
     )
 
     cid = calendar['id']
@@ -230,16 +248,16 @@ async def create_calendar(
 
     return {
         "status": "success",
-        "calendarId": calendar["id"],
-        "summary": calendar.get("summary", ""),
-        "timeZone": calendar.get("timeZone", ""),
+        "id": calendar.get("id", "unavailable"),
+        "summary": calendar.get("summary", "unavailable"),
+        "timeZone": calendar.get("timeZone", "unavailable"),
         "calendar_url": calendar_url
     }
 
 
 @mcp.tool(
-    title="Fetch metadata of a calendar from user's Google calendar account.",
-    description=registry.GET_CALENDAR_TOOL_DESCRIPTION
+    title="Get Calendar",
+    description=schema.GET_CALENDAR_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def get_calendar(
@@ -270,17 +288,25 @@ async def get_calendar(
             - 'message' (str, optional): Additional details or error messages.
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
-    
-    service = await async_init_calendar()
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
+
+    service = await async_init_google_calendar_service()
 
     calendar_metadata = await asyncio.to_thread(
-        lambda: service.calendars().get(calendarId=calendar_id).execute()
+        lambda: service.calendars().get(
+            calendarId=calendar_id
+        ).execute()
     )
 
     if calendar_metadata:
-        return {"status": "success", "metadata": calendar_metadata}
-    
+        return {
+            "status": "success", 
+            "metadata": calendar_metadata
+        }
+
     return {
         "status": "not_found", 
         "message": f"No metadata found for calendar with id '{calendar_id}'."
@@ -288,8 +314,8 @@ async def get_calendar(
 
 
 @mcp.tool(
-    title="Update metadata of a calendar in user's Google Calendar account.",
-    description=registry.UPDATE_CALENDAR_TOOL_DESCRIPTION
+    title="Update Calendar",
+    description=schema.UPDATE_CALENDAR_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def update_calendar(
@@ -319,7 +345,9 @@ async def update_calendar(
 
     This tool allows modification of a calendar's title, description, location, 
     and time zone using the Google Calendar API. Only the fields provided will 
-    be patched. If no field is given, the update request is rejected.
+    be patched. To clear out a field, pass an empty string for that parameter. 
+    If no field is provided for updated, the update request is rejected. The 
+    `Summary` field can not be empty.
 
     Args:
         calendar_id (str): The unique identifier of the calendar to be updated.
@@ -349,19 +377,28 @@ async def update_calendar(
         }
 
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
 
     calendar_id = calendar_id.strip()
     calendar_body = {}
 
-    if summary:
-        calendar_body["summary"] = summary.strip()
+    if summary is not None:
+        if summary.strip() == "":
+            return {
+                "status": "error", 
+                "message": "Summary cannot be empty."
+            }
+        
+        calendar_body["summary"] = summary
     
-    if description:
-        calendar_body["description"] = description.strip()
+    if description is not None:
+        calendar_body["description"] = description
     
-    if location:
-        calendar_body["location"] = location.strip()
+    if location is not None:
+        calendar_body["location"] = location
 
     if timezone:
         timezone = timezone.strip()
@@ -369,17 +406,20 @@ async def update_calendar(
         if timezone not in all_timezones_set:
             return {
                 "status": "error",
-                "message": f"Invalid time zone: '{timezone}'."
-                "Please provide a valid IANA time zone (e.g., Asia/Kolkata)."
+                "message": (
+                    f"Invalid time zone: '{timezone}'."
+                    "Please provide a valid IANA time zone (e.g. Asia/Kolkata)"
+                )
             }
 
         calendar_body["timeZone"] = timezone
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
     updated_calendar = await asyncio.to_thread(
         lambda: service.calendars().patch(
-            calendarId=calendar_id, body=calendar_body
+            calendarId=calendar_id, 
+            body=calendar_body
         ).execute()
     )
 
@@ -390,14 +430,14 @@ async def update_calendar(
             "summary": updated_calendar.get("summary", ""),
             "description": updated_calendar.get("description", ""),
             "location": updated_calendar.get("location", ""),
-            "timeZone": updated_calendar.get("timeZone", "")
+            "time_zone": updated_calendar.get("timeZone", "")
         }
     }
 
 
 @mcp.tool(
-    title="Deletes a secondary calendar from user's Google Calendar account.",
-    description=registry.DELETE_CALENDAR_TOOL_DESCRIPTION
+    title="Delete Calendar",
+    description=schema.DELETE_CALENDAR_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def delete_calendar(
@@ -424,12 +464,17 @@ async def delete_calendar(
             - 'message' (str): Confirmation meassage, or reason for failure
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
     calendar = await asyncio.to_thread(
-        lambda: service.calendars().get(calendarId=calendar_id).execute()
+        lambda: service.calendars().get(
+            calendarId=calendar_id
+        ).execute()
     )
 
     if calendar.get("primary", False):
@@ -439,7 +484,9 @@ async def delete_calendar(
         }
 
     await asyncio.to_thread(
-        lambda: service.calendars().delete(calendarId=calendar_id).execute()
+        lambda: service.calendars().delete(
+            calendarId=calendar_id
+        ).execute()
     )
 
     return {
@@ -449,8 +496,8 @@ async def delete_calendar(
 
 
 @mcp.tool(
-    title="List events from the user's Google Calendar.",
-    description=registry.LIST_CALENDAR_EVENTS_TOOL_DESCRIPTION
+    title="List Events",
+    description=schema.LIST_CALENDAR_EVENTS_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def list_events(
@@ -460,8 +507,7 @@ async def list_events(
     ],
     query: Annotated[
         Optional[str],
-        Field(description="""Free text search terms to find events that match 
-            these terms in any field.""")
+        Field(description="Free text search terms to find events that match.")
     ] = None,
     max_results: Annotated[
         Optional[int],
@@ -490,6 +536,10 @@ async def list_events(
         Optional[str],
         Field(description="Upper bound (RFC3339 timestamp) for event end time")
     ] = None,
+    time_zone: Annotated[
+        Optional[str],
+        Field(description="Time zone used in the response.")
+    ] = None,
     updated_min: Annotated[
         Optional[str],
         Field(description="""Lower bound (RFC3339 timestamp) for an event's 
@@ -501,16 +551,12 @@ async def list_events(
             instances.""")
     ] = None,
     order_by: Annotated[
-        Optional[registry.CALENDAR_EVENT_SORT_KEYS],
+        Optional[schema.CALENDAR_EVENT_SORT_KEYS],
         Field(description="The order of the events returned in the results.")
-    ] = None,
-    time_zone: Annotated[
-        Optional[str],
-        Field(description="Time zone used in the response.")
-    ] = None,
+    ] = None
 ) -> Dict[str, Union[str, List[Dict[str, Any]]]]:
     """
-    Tool to list events from a specified calendar in a user's Google Calendar 
+    Tool to list events from a specified calendar in the user's Google Calendar 
     account.
 
     This tool retrieves a list of events based on specified filters such as the 
@@ -540,14 +586,17 @@ async def list_events(
         time_max (Optional[str]): Fetch events starting before this time
             - Timestamp should be in RFC3339 format.
             - Example: "2023-09-30T23:59:59Z"
+        time_zone (Optional[str]): Time zone used in the response.
+            - Must be a valid IANA time zone. Defaults to calendar's time zone.
+            - Example: "Asia/Kolkata"
         updated_min (Optional[str]): Fetch events updated after this time
             - Timestamp should be in RFC3339 format.
             - Example: "2023-09-30T00:00:00Z"
         single_events (Optional[bool]): Expand recurring event into single ones
             - Example: True
-        time_zone (Optional[str]): Time zone used in the response.
-            - Must be a valid IANA time zone. Defaults to calendar's time zone.
-            - Example: "Asia/Kolkata"
+        order_by (Optional[str]): Order of the events returned in the results.
+            - Can take any of the following values: "startTime", "updateTime"
+            - Example: "startTime"
 
     Returns:
         Dict[str, Union[str, List[Dict[str, Any]]]]: A dictionary containing:
@@ -560,67 +609,70 @@ async def list_events(
 
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
-    
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
+
     query = query.strip() if query and query.strip() else None
 
     if time_min and not validate_rfc3339_timestamp(time_min):
         return {
             "status": "error",
-            "message": f"Invalid time_min format: '{time_min}'. "
-                       "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            "message": (
+                f"Invalid time_min format: '{time_min}'. "
+                "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            )
         }
 
     if time_max and not validate_rfc3339_timestamp(time_max):
         return {
             "status": "error",
-            "message": f"Invalid time_max format: '{time_max}'. "
-                       "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            "message": (
+                f"Invalid time_max format: '{time_max}'. "
+               "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            )
         }
 
     if updated_min and not validate_rfc3339_timestamp(updated_min):
         return {
             "status": "error",
-            "message": f"""The provided timestamp '{updated_min}' is not in a 
-            valid RFC3339 format. Defaulted to the calendar's configured time 
-            zone."""
+            "message": (
+                f"The provided timestamp '{updated_min}' is not in a valid "
+                "RFC3339 format. Defaults to calendar's configured timezone."
+            )
         }
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
-    events = []
-    page_token = None
+    result = await asyncio.to_thread(
+        lambda: service.events().list(
+            calendarId=calendar_id,
+            q=query,
+            maxResults=max_results,
+            maxAttendees=max_attendees,
+            showHiddenInvitations=show_hidden_invitations,
+            showDeleted=show_deleted,
+            timeMin=time_min,
+            timeMax=time_max,
+            timeZone=time_zone if time_zone in all_timezones_set else None,
+            updatedMin=updated_min,
+            singleEvents=single_events,
+            orderBy=order_by,
+        ).execute()
+    )
 
-    while True:
-        result = await asyncio.to_thread(
-            lambda: service.events().list(
-                calendarId=calendar_id,
-                orderBy=order_by,
-                showHiddenInvitations=show_hidden_invitations,
-                timeMin=time_min,
-                updatedMin=updated_min,
-                singleEvents=single_events,
-                showDeleted=show_deleted,
-                maxAttendees=max_attendees,
-                maxResults=max_results,
-                timeMax=time_max,
-                q=query,
-                timeZone=time_zone if time_zone in all_timezones_set else None,
-                pageToken=page_token
-            ).execute()
-        )
-
-        events.extend(result.get("items", []))
-        page_token = result.get("nextPageToken")
-
-        if not page_token:
-            break
-
-    if events:
-        response = {"status": "success", "events": events}
+    if result:
+        response = {
+            "status": "success", 
+            "events": result.get("items", [])
+        }
 
         if time_zone and time_zone not in all_timezones_set:
-            response['warning'] = f"Invalid time zone: '{time_zone}'."
+            response['warning'] = (
+                f"Passed invalid time zone: '{time_zone}'. "
+                "Defaulted to calendar's configured timezone."
+            )
 
         return response
 
@@ -631,8 +683,8 @@ async def list_events(
 
 
 @mcp.tool(
-    title="Get event details from the user's Google Calendar.",
-    description=registry.GET_EVENT_TOOL_DESCRIPTION
+    title="Get Event",
+    description=schema.GET_EVENT_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def get_event(
@@ -682,12 +734,18 @@ async def get_event(
             - 'message' (str): Any relevant messages or error info
     """
     if not calendar_id or not calendar_id.strip(): 
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
 
     if not event_id or not event_id.strip():
-        return {"status": "error", "message": "Event ID cannot be empty."}
-    
-    service = await async_init_calendar()
+        return {
+            "status": "error", 
+            "message": "Event ID cannot be empty."
+        }
+
+    service = await async_init_google_calendar_service()
 
     event = await asyncio.to_thread(
         lambda: service.events().get(
@@ -703,18 +761,24 @@ async def get_event(
             "status": "not_found",
             "message": f"No event found with ID {event_id} in {calendar_id}."
         }
-    
-    response = {"status": "success", "event": event}
+
+    response = {
+        "status": "success", 
+        "event": event
+    }
 
     if time_zone and time_zone not in all_timezones_set:
-        response['warning'] = f"Invalid time zone: '{time_zone}'."
-    
+        response['warning'] = (
+            f"Passed invalid time zone: '{time_zone}'. "
+            "Defaulted to calendar's configured timezone."
+        )
+
     return response
 
 
 @mcp.tool(
-    title="Create a new event in the user's Google Calendar.",
-    description=registry.CREATE_EVENT_TOOL_DESCRIPTION
+    title="Create Event",
+    description=schema.CREATE_EVENT_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def create_event(
@@ -734,17 +798,17 @@ async def create_event(
         str,
         Field(description="The end time of the event in RFC3339 format.")
     ],
-    location: Annotated[
+    time_zone: Annotated[
         Optional[str],
-        Field(description="The geographical location where the event is held.")
+        Field(description="The time zone of the event.")
     ] = None,
     description: Annotated[
         Optional[str],
         Field(description="Detailed description or notes about the event.")
     ] = None,
-    time_zone: Annotated[
+    location: Annotated[
         Optional[str],
-        Field(description="The time zone of the event.")
+        Field(description="The geographical location where the event is held.")
     ] = None,
     add_google_meet_link: Annotated[
         Optional[bool],
@@ -759,12 +823,8 @@ async def create_event(
         Field(description='Recurrence rules as specified in RFC5545 format.')
     ] = None,
     visibility: Annotated[
-        Optional[registry.CALENDAR_EVENT_VISIBILITY],
+        Optional[schema.CALENDAR_EVENT_VISIBILITY],
         Field(description="The visibility of the event in the calendar.")
-    ] = None,
-    transparency: Annotated[
-        Optional[registry.CALENDAR_EVENT_TRANSPARENCY],
-        Field(description="Whether the event blocks calendar time.")
     ] = None,
     guests_can_invite_others: Annotated[
         Optional[bool],
@@ -774,8 +834,12 @@ async def create_event(
         Optional[bool],
         Field(description="Whether attendees can see each other.")
     ] = None,
+    transparency: Annotated[
+        Optional[schema.CALENDAR_EVENT_TRANSPARENCY],
+        Field(description="Whether the event blocks calendar time.")
+    ] = None,
     send_updates: Annotated[
-        Optional[registry.CALENDAR_EVENT_SEND_UPDATES],
+        Optional[schema.CALENDAR_EVENT_SEND_UPDATES],
         Field(description="Whether to send updates to attendees.")
     ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
@@ -800,12 +864,12 @@ async def create_event(
         time_zone (Optional[str]): Time zone to apply to the start and end time
             - If invalid or unspecified, defaults to UTC
             - Example: "Asia/Kolkata"
-        add_google_meet_link (Optional[bool]): Whether to add Google Meet link
-            - Example: True
-        location (Optional[str]): Physical or virtual location of the event
-            - Example: "Conference Room A"
         description (Optional[str]): Additional details or agenda for the event
             - Example: "Monthly planning and retrospective"
+        location (Optional[str]): Physical or virtual location of the event
+            - Example: "Conference Room A"
+        add_google_meet_link (Optional[bool]): Whether to add Google Meet link
+            - Example: True
         attendees (Optional[List[str]]): List of attendee email addresses
             - Invalid emails are ignored with a warning
             - Example: ["alice@example.com", "john@example.com"]
@@ -814,17 +878,19 @@ async def create_event(
             - DTSTART and DTEND lines are not allowed in this field.
             - Example: ["RRULE:FREQ=DAILY;COUNT=2"]
         visibility (Optional[str]): Visibility of the event in the calendar
-            - Defaults to "opaque"
+            - Possible values: "default", "public", "private", "confidential"
+            - Defaults to "default"
             - Example: "public"
         guests_can_invite_others (Optional[bool]): If guests can invite others
             - Example: True
         guests_can_see_other_guests (Optional[bool]): If guests can see others
             - Example: False
         transparency (Optional[str]): Whether the event blocks calendar time
-            - "opaque" blocks time; "transparent" does not. Defaults to opaque
+            - Possible values: "transparent", "opaque"
+            - "opaque" blocks time; "transparent" does not. Defaults to opaque.
             - Example: "opaque"
         send_updates (Optional[str]): Controls the update notification behavior
-            - Defaults to "none"
+            - Possible values: "all", "externalOnly", "none"; Defaults to "none"
             - Example: "all"
 
     Returns:
@@ -837,23 +903,33 @@ async def create_event(
                 - 'message' (str): Error message or explanation
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
     
     if not summary or not summary.strip():
-        return {"status": "error", "message": "Event summary cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Event summary cannot be empty."
+        }
 
     if start_time and not validate_rfc3339_timestamp(start_time):
         return {
             "status": "error",
-            "message": f"Invalid start_time format: '{start_time}'. "
-                       "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            "message": (
+                f"Invalid start_time format: '{start_time}'. "
+                "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            )
         }
 
     if end_time and not validate_rfc3339_timestamp(end_time):
         return {
             "status": "error",
-            "message": f"Invalid end_time format: '{end_time}'. "
-                       "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            "message": (
+                f"Invalid end_time format: '{end_time}'. "
+                "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+            )
         }
 
     if not is_rfc3339_start_time_before_end_time(
@@ -891,7 +967,7 @@ async def create_event(
 
     if description:
         event_body["description"] = description.strip()
-    
+
     if recurrence:
         event_body["recurrence"] = recurrence
 
@@ -905,7 +981,7 @@ async def create_event(
                 valid_attendees.append({"email": email})
             else:
                 invalid_attendees.append(email)
-                
+
         if valid_attendees:
             event_body["attendees"] = valid_attendees
 
@@ -919,7 +995,7 @@ async def create_event(
             }
         }
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
     event = await asyncio.to_thread(
         lambda: service.events().insert(
@@ -930,7 +1006,10 @@ async def create_event(
         ).execute()
     )
 
-    response = {"status": "success", "event": event}
+    response = {
+        "status": "success", 
+        "event": event
+    }
 
     if invalid_attendees:
         response['warning'] = "Invalid attendee emails: " + ", ".join(
@@ -941,8 +1020,8 @@ async def create_event(
 
 
 @mcp.tool(
-    title="Update an existing event in the user's Google Calendar.",
-    description=registry.UPDATE_EVENT_TOOL_DESCRIPTION
+    title="Update Event",
+    description=schema.UPDATE_EVENT_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def update_event(
@@ -958,13 +1037,13 @@ async def update_event(
         Optional[str],
         Field(description="The title or subject of the event.")
     ] = None,
-    location: Annotated[
-        Optional[str],
-        Field(description="The geographical location where the event is held.")
-    ] = None,
     description: Annotated[
         Optional[str],
         Field(description="Detailed description or notes about the event.")
+    ] = None,
+    location: Annotated[
+        Optional[str],
+        Field(description="The geographical location where the event is held.")
     ] = None,
     start_time: Annotated[
         Optional[str],
@@ -983,11 +1062,11 @@ async def update_event(
         Field(description='Recurrence rules as specified in RFC5545 format.')
     ] = None,
     visibility: Annotated[
-        Optional[registry.CALENDAR_EVENT_VISIBILITY],
+        Optional[schema.CALENDAR_EVENT_VISIBILITY],
         Field(description="The visibility of the event in the calendar.")
     ] = None,
     transparency: Annotated[
-        Optional[registry.CALENDAR_EVENT_TRANSPARENCY],
+        Optional[schema.CALENDAR_EVENT_TRANSPARENCY],
         Field(description="Whether the event blocks calendar time.")
     ] = None,
     guests_can_invite_others: Annotated[
@@ -999,7 +1078,7 @@ async def update_event(
         Field(description="Whether attendees can see each other.")
     ] = None,
     send_updates: Annotated[
-        Optional[registry.CALENDAR_EVENT_SEND_UPDATES],
+        Optional[schema.CALENDAR_EVENT_SEND_UPDATES],
         Field(description="Whether to send update notification to attendees.")
     ] = None
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
@@ -1007,13 +1086,12 @@ async def update_event(
     Tool to update an existing event in the user's Google Calendar account.
 
     This tool allows modification of an event's metadata such as its summary, 
-    location, description, timing, recurrence rules and visibility settings. It 
-    also supports options to update whether guests can invite others or view 
-    each other, as well as whether the event blocks calendar time.
-
-    Partial updates are supported i.e. only fields that are provided will be 
-    updated. However, when modifying the start or end time, both fields must be 
-    provided together in valid RFC3339 format.
+    location, description, timing, recurrence rules and visibility settings etc.
+    Partial updates are supported, i.e. only the fields that are changed will 
+    be updated. However, when modifying the start or end time, both fields must 
+    be provided together in valid RFC3339 format.To clear out a field, pass an 
+    empty string for that parameter. If no field is provided for updating, the 
+    update request is rejected. `Summary` can not be empty.
 
     Args:
         calendar_id (str): Unique ID of the calendar where the event is stored.
@@ -1022,30 +1100,33 @@ async def update_event(
             - Example: "sample_event_id"
         summary (str): Title or the subject of the Google calendar event
             - Example: "Team Sync Meeting"
-        location (Optional[str]): Physical or virtual location of the event
-            - Example: "Conference Room A"
         description (Optional[str]): Additional details or agenda for the event
             - Example: "Monthly planning and retrospective"
+        location (Optional[str]): Physical or virtual location of the event
+            - Example: "Conference Room A"
         start_time (str): Start timestamp of the event in valid RFC3339 format
             - Example: "2025-08-10T10:00:00+05:30"
-        end_time (str): End timestamp of the event in valid RFC3339 format
+        end_time (str): End timestamp of the event in valid RFC3339 format.
             - Example: "2025-08-10T11:00:00+05:30"
         time_zone (Optional[str]): Time zone to apply to the start and end time
-            - If invalid or unspecified, defaults to the calendar's time zone
+            - If unspecified, defaults to the calendar's time zone.
             - Example: "Asia/Kolkata"
         recurrence (Optional[List[str]]): Event recurrence rules
             - Format should be as specified in RFC5545
             - DTSTART and DTEND lines are not allowed in this field.
             - Example: ["RRULE:FREQ=DAILY;COUNT=2"]
         visibility (Optional[str]): Visibility of the event in the calendar
+            - Possible values: "default", "public", "private", "confidential"
             - Example: "public"
         transparency (Optional[str]): Whether the event blocks calendar time
+            - Possible values: "transparent", "opaque"
             - "opaque" blocks time; "transparent" does not. Defaults to opaque
         guests_can_invite_others (Optional[bool]): If guests can invite others
             - Example: True
         guests_can_see_other_guests (Optional[bool]): If guests can see others
             - Example: False
         send_updates (Optional[str]): Controls the notification behavior.
+            - Possible values: "all", "externalOnly", "none"
             - Example: "all"
 
     Returns:
@@ -1053,64 +1134,130 @@ async def update_event(
             - 'status' (str): "success" or "error"
             - On success:
                 - 'event' (dict): Updated event details from Google Calendar
-                - 'warning' (str, optional): Warning if invalid values found
+                - 'warning' (str, optional): Warning if invalid timezone found
             - On failure:
                 - 'message' (str): Error message or explanation
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
 
     if not event_id or not event_id.strip():
-        return {"status": "error", "message": "Event ID cannot be empty."}
-    
+        return {
+            "status": "error", 
+            "message": "Event ID cannot be empty."
+        }
+
     event_body = {}
 
-    if summary and summary.strip():
+    if summary is not None:
+        if summary.strip() == "":
+            return {
+                "status": "error", 
+                "message": "Summary cannot be empty."
+            }
+
         event_body["summary"] = summary
 
-    if description and description.strip():
+    if description is not None:
         event_body["description"] = description
 
-    if location and location.strip():
+    if location is not None:
         event_body["location"] = location
+    
+    service = await async_init_google_calendar_service()
+
+    event = await asyncio.to_thread(
+        lambda: service.events().get(
+            calendarId=calendar_id, 
+            eventId=event_id,
+        ).execute()
+    )
+
+    start_time_tz = event.get("start", {}).get("timeZone", "")
+    end_time_tz = event.get("end", {}).get("timeZone", "")
+
+    if (start_time and not end_time) or (end_time and not start_time):
+        return {
+            "status": "error",
+            "message": "Both start_time and end_time must be provided together."
+        }
+
+    bad_timezone = False
 
     if start_time:
         if not validate_rfc3339_timestamp(start_time):
             return {
                 "status": "error",
-                "message": f"Invalid start_time format: '{start_time}'. "
-                        "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+                "message": (
+                    f"Invalid start_time format: '{start_time}'. "
+                    "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+                )
             }
+
+        if time_zone and time_zone.strip() in all_timezones_set:
+            updated_start_time_zone = time_zone.strip()
+        else:
+            if len(start_time_tz.strip()) < 1:
+                return {
+                    "status": "error",
+                    "message": (
+                        f"Invalid time_zone provided: {time_zone}."
+                        "Default timezone for start_time could not be resolved."
+                    )
+                }
+            
+            bad_timezone = True
+            updated_start_time_zone = start_time_tz
 
         event_body["start"] = {
             "dateTime": start_time,
-            "timeZone": time_zone if time_zone in all_timezones_set else "UTC"
+            "timeZone": updated_start_time_zone
         }
 
     if end_time:
         if not validate_rfc3339_timestamp(end_time):
             return {
                 "status": "error",
-                "message": f"Invalid end_time format: '{end_time}'. "
-                        "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+                "message": (
+                    f"Invalid end_time format: '{end_time}'. "
+                    "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+                )
             }
+
+        if time_zone and time_zone.strip() in all_timezones_set:
+            updated_end_time_zone = time_zone.strip()
+        else:
+            if len(end_time_tz.strip()) < 1:
+                return {
+                    "status": "error",
+                    "message": (
+                        f"Invalid time_zone provided: {time_zone}."
+                        "Default timezone for end_time could not be resolved."
+                    )
+                }
+
+            bad_timezone = True
+            updated_end_time_zone = end_time_tz
 
         event_body["end"] = {
             "dateTime": end_time,
-            "timeZone": time_zone if time_zone in all_timezones_set else "UTC"
+            "timeZone": updated_end_time_zone
         }
 
     if recurrence:
         event_body["recurrence"] = recurrence
-
-    if guests_can_invite_others is not None:
-        event_body["guestsCanInviteOthers"] = guests_can_invite_others
 
     if visibility:
         event_body["visibility"] = visibility
 
     if transparency:
         event_body["transparency"] = transparency
+
+    if guests_can_invite_others is not None:
+        event_body["guestsCanInviteOthers"] = guests_can_invite_others
 
     if guests_can_see_other_guests is not None:
         event_body["guestsCanSeeOtherGuests"] = guests_can_see_other_guests
@@ -1120,8 +1267,6 @@ async def update_event(
             "status": "error",
             "message": "No fields provided to update the event."
         }
-
-    service = await async_init_calendar()
 
     updated_event = await asyncio.to_thread(
         lambda: service.events().patch(
@@ -1133,12 +1278,23 @@ async def update_event(
         ).execute()
     )
 
-    return {"status": "success", "event": updated_event}
+    response = {
+        "status": "success", 
+        "event": updated_event
+    }
+
+    if bad_timezone:
+        response['warning'] = (
+            "Invalid time zone provided. "
+            "Defaulted to the event's original time zone."
+        )
+
+    return response
 
 
 @mcp.tool(
-    title="Delete an event from the user's Google Calendar.",
-    description=registry.DELETE_EVENT_TOOL_DESCRIPTION
+    title="Delete Event",
+    description=schema.DELETE_EVENT_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
 async def delete_event(
@@ -1151,7 +1307,7 @@ async def delete_event(
         Field(description="ID of the event on Google Calendar to be deleted.")
     ],
     send_updates: Annotated[
-        Optional[registry.CALENDAR_EVENT_SEND_UPDATES],
+        Optional[schema.CALENDAR_EVENT_SEND_UPDATES],
         Field(description="Whether to send update notification to attendees.")
     ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
@@ -1178,14 +1334,20 @@ async def delete_event(
             - "message" (str): Descriptive message about the operation outcome
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
 
     if not event_id or not event_id.strip():
-        return {"status": "error", "message": "Event ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Event ID cannot be empty."
+        }
 
     send_updates = (send_updates or "none").strip()
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
     await asyncio.to_thread(
         lambda: service.events().delete(
@@ -1202,11 +1364,11 @@ async def delete_event(
 
 
 @mcp.tool(
-    title="Clear all events from the user's primary Google Calendar.",
-    description=registry.CLEAR_PRIMARY_CALENDAR_TOOL_DESCRIPTION
+    title="Clear Primary Calendar.",
+    description=schema.CLEAR_PRIMARY_CALENDAR_TOOL_DESCRIPTION
 )
 @handle_google_calendar_exceptions
-async def clear_primary_calendar_events(
+async def clear_primary_calendar(
     calendar_id: Annotated[
         str,
         Field(description="Unique ID of the calendar to clear all events from")
@@ -1230,23 +1392,32 @@ async def clear_primary_calendar_events(
             - 'message' (str): Description of the result or reason for failure.        
     """
     if not calendar_id or not calendar_id.strip():
-        return {"status": "error", "message": "Calendar ID cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
 
-    service = await async_init_calendar()
+    service = await async_init_google_calendar_service()
 
     calendar = await asyncio.to_thread(
-        lambda: service.calendars().get(calendarId=calendar_id).execute()
+        lambda: service.calendars().get(
+            calendarId=calendar_id
+        ).execute()
     )
 
     if not calendar.get("primary", False):
         return {
             "status": "error",
-            "message": """Cannot clear secondary calendar. Only the primary 
-            calendar can be cleared."""
+            "message": (
+                "Cannot clear secondary calendar. "
+                "Only the primary calendar can be cleared."
+            )
         }
 
     await asyncio.to_thread(
-        lambda: service.calendars().clear(calendarId=calendar_id).execute()
+        lambda: service.calendars().clear(
+            calendarId=calendar_id
+        ).execute()
     )
 
     return {

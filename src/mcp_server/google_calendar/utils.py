@@ -21,73 +21,7 @@ from googleapiclient.errors import HttpError
 logger = logging.getLogger(__name__)
 
 
-def handle_google_calendar_exceptions(func):
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            return await func(*args, **kwargs)
-
-        except HttpError as http_error:
-            status = http_error.resp.status
-            reason = http_error._get_reason()
-
-            if status == 400:
-                message = """Bad request. Please check if required fields like 
-                summary, time zone, or event timing are valid."""
-
-            elif status == 401:
-                message = """Unauthorized access. Check if the credentials are 
-                valid or expired."""
-
-            elif status == 403:
-                message = """Permission denied. Ensure your OAuth scope 
-                includes calendar access and that the authenticated user has 
-                permission to perform this action."""
-
-            elif status == 404:
-                message = """Resource not found. The calendar or event may not 
-                exist or was deleted."""
-
-            elif status == 409:
-                message = """Conflict error. This could be due to event ID 
-                collisions or duplicate operations."""
-
-            elif status == 410:
-                message = """Gone. The resource is no longer available and no 
-                forwarding address is known."""
-
-            elif status == 412:
-                message = """Precondition failed. Try syncing again or verify 
-                versioning headers like ETag."""
-
-            elif status == 429:
-                message = """Quota exceeded. Too many requests. Try again later 
-                or use exponential backoff."""
-
-            elif status in [500, 503]:
-                message = """Google Calendar service is temporarily 
-                unavailable. Please retry after some time."""
-
-            else:
-                message = f"Unexpected error with Calendar API: {reason}"
-
-            logger.error(f"[Status Code {status}]: {message}", exc_info=True)
-
-            return {"status": "error", "message": message}
-
-        except Exception as error:
-            logger.error("An unexpected error occured", exc_info=True)
-
-            return {
-                "status": "error",
-                "message": f"An unexpected error occurred: {error}",
-            }
-
-    return wrapper
-
-
-def is_valid_email(email: str) -> bool:
-    EMAIL_REGEX = re.compile(
+EMAIL_REGEX = re.compile(
         r"^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+"
         r"(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*"
         r'|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]'
@@ -101,23 +35,115 @@ def is_valid_email(email: str) -> bool:
         re.IGNORECASE
     )
 
+RFC3339_REGEX = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
+
+def is_valid_email(email: str) -> bool:
+    if not isinstance(email, str):
+        return False
+
     return bool(EMAIL_REGEX.match(email))
 
+def validate_rfc3339_timestamp(value: str) -> bool:
+    if not isinstance(value, str):
+        return False
 
-def validate_rfc3339_timestamp(value: str):
-    rfc3339_regex = re.compile(
-        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
-    )
-
-    return rfc3339_regex.match(value)
-
+    return RFC3339_REGEX.match(value)
 
 def is_rfc3339_start_time_before_end_time(start: str, end: str) -> bool:
     try:
-        start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_dt = datetime.fromisoformat(
+            start.replace("Z", "+00:00")
+        )
+
+        end_dt = datetime.fromisoformat(
+            end.replace("Z", "+00:00")
+        )
 
         return start_dt < end_dt
 
     except ValueError:
         return False
+
+def handle_google_calendar_exceptions(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+
+        except HttpError as http_error:
+            status = http_error.resp.status
+            reason = http_error._get_reason()
+
+            if status == 400:
+                message = (
+                    "Bad request. Please check if required fields like "
+                    "summary, time zone, or event timing are valid."
+                )
+
+            elif status == 401:
+                message = (
+                    "Unauthorized access. "
+                    "Check if the credentials are valid or expired."
+                )
+
+            elif status == 403:
+                message = (
+                    "Permission denied. "
+                    "Ensure your OAuth scope includes calendar access and that "
+                    "authenticated user has permission to perform this action."
+                )
+
+            elif status == 404:
+                message = (
+                    "Resource not found. "
+                    "The calendar or event may not exist or was deleted."
+                )
+
+            elif status == 409:
+                message = (
+                    "Conflict error. "
+                    "This could be due to duplicate operations."
+                )
+
+            elif status == 410:
+                message ="The resource is no longer available."
+
+            elif status == 412:
+                message = (
+                    "Precondition failed. "
+                    "Try syncing again or verify versioning headers."
+                )
+
+            elif status == 429:
+                message = (
+                    "Quota exceeded. Too many requests. "
+                    "Try again later or use exponential backoff."
+                )
+
+            elif status in [500, 503]:
+                message = (
+                    "The Google Calendar service is temporarily unavailable. "
+                    "Please retry after some time."
+                )
+
+            else:
+                message = f"Unexpected error with the Calendar API: {reason}"
+
+            logger.error(f"[Status Code {status}]: {message}", exc_info=True)
+
+            return {
+                "status": "error", 
+                "message": message
+            }
+
+        except Exception as error:
+            logger.error("An unexpected error occured", exc_info=True)
+
+            return {
+                "status": "error",
+                "message": f"An unexpected error occurred: {error}",
+            }
+
+    return wrapper
