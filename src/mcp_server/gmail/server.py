@@ -22,8 +22,8 @@ from typing import Annotated, Any, Dict, List, Optional, Union
 
 from mcp.server.fastmcp import FastMCP
 
-from auth import async_init_gmail
-import registry
+import schema
+from auth import async_init_gmail_service
 from utils import is_valid_email, handle_gmail_exceptions
 
 logger = logging.getLogger(__name__)
@@ -34,15 +34,17 @@ mcp = FastMCP(
     description="""
     The Gmail MCP server offers a comprehensive set of tools for managing 
     emails, drafts and profile information within the user's Gmail account.""",
-    version="0.1.0",
-    instructions=registry.GMAIL_MCP_SERVER_INSTRUCTIONS,
-    settings={"initialization_timeout": 1200.0}
+    version="0.1.1",
+    instructions=schema.GMAIL_MCP_SERVER_INSTRUCTIONS,
+    settings={
+        "initialization_timeout": 1200.0
+    }
 )
 
 
 @mcp.tool(
-    title="Get the user's profile information from their gmail account.",
-    description=registry.GET_GMAIL_PROFILE_DESCRIPTION
+    title="Get Profile",
+    description=schema.GET_GMAIL_PROFILE_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def get_profile(
@@ -65,10 +67,10 @@ async def get_profile(
             - Example: "user@example.com"
 
     Returns:
-        Dict[str, Union[str, Dict[str, Any]]]: A dictionary containing:
+        Dict[str, Union[str, Dict[str, Union[str, int]]]]: A dict containing:
             - 'status' (str): "success", "not_found" or "error"
             On success:
-            - 'profile_information' (Dict[str, Any]): Dict with user's profile
+            - 'profile_information' (Dict): Dict with user's profile
             information, containing:
                 - 'emailAddress' (str): User's primary email address.
                 - 'messagesTotal' (int): Total number of messages.
@@ -81,12 +83,18 @@ async def get_profile(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     response = await asyncio.to_thread(
         lambda: service.users().getProfile(userId=user_id).execute()
@@ -98,12 +106,15 @@ async def get_profile(
             "message": f"Profile not found for user with id: `{user_id}`."
         }
 
-    return {"status": "success", "profile_information": response}
+    return {
+        "status": "success", 
+        "profile_information": response
+    }
 
 
 @mcp.tool(
-    title="List email messages from user's gmail account.",
-    description=registry.LIST_GMAIL_MESSAGES_DESCRIPTION
+    title="List Messages",
+    description=schema.LIST_GMAIL_MESSAGES_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def list_messages(
@@ -123,13 +134,13 @@ async def list_messages(
         Optional[bool],
         Field(description="Whether to include messages from spam and trash.")
     ] = None
-) -> Dict[str, Union[str, int, List[Dict[str, Any]], Dict[str, Any]]]:
+) -> Dict[str, Union[str, List[Dict[str, str]]]]:
     """
-    Tool to list email messages from the user's gmail account.
+    Tool to list id and threadId of email messages from a user's gmail account.
 
-    This tool fetches a list of message metadata for a specified user using the
-    Gmail API based on specified filters such as the query (search term), label 
-    IDs, and the maximum number of results to fetch.
+    This tool fetches a list of message metadata (id and threadId) for a given 
+    user using the Gmail API based on specified filters such as the query (i.e. 
+    the search term), label IDs, and the maximum number of results to fetch.
 
     Args:
         user_id (str): User ID or email address.
@@ -140,13 +151,14 @@ async def list_messages(
             - Supports the same query format as Gmail's search box.
             - Example: 'from:user@example.com is:unread'
         max_results (Optional[int]): Maximum number of messages to return.
-            - Example: 15
+            - Value must be between 1 to 100. Defaults to 5, if not provided.
+            - Example: 10
         include_spam_and_trash (Optional[bool]): Whether to include messages 
             from `SPAM` and `TRASH` in the results.
             - Example: True
 
     Returns:
-        Dict[str, Any]: A dictionary containing:
+        Dict[str, Union[str, List[Dict[str, str]]]]: A dictionary containing:
             - 'status' (str): "success", "not_found" or "error"
             On success:
             - 'email_messages' (List[Dict]): List of messages.
@@ -156,14 +168,21 @@ async def list_messages(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
-    query = query.strip() if query and query.strip() else None
+    query = str(query).strip() or None if query is not None else None
+    max_results = max_results if max_results else 5
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     response = await asyncio.to_thread(
         lambda: service.users().messages().list(
@@ -182,25 +201,28 @@ async def list_messages(
             "message": f"No messages found for user with id: '{user_id}'"
         }
 
-    return {"status": "success", "email_messages": messages}
+    return {
+        "status": "success", 
+        "email_messages": messages
+    }
 
 
 @mcp.tool(
-    title="Get the specified message from user's gmail account.",
-    description=registry.GET_EMAIL_MESSAGE_DESCRIPTION
+    title="Get Message",
+    description=schema.GET_EMAIL_MESSAGE_DESCRIPTION
 )
 @handle_gmail_exceptions
-async def get_email_message(
-    message_id: Annotated[
-        str,
-        Field(description="Unique ID of the Gmail message to retrieve.")
-    ],
+async def get_message(
     user_id: Annotated[
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
     ],
-    format: Annotated[
-        Optional[registry.GMAIL_MESSAGE_FORMAT],
+    message_id: Annotated[
+        str,
+        Field(description="Unique ID of the Gmail message to retrieve.")
+    ],
+    message_format: Annotated[
+        Optional[schema.GMAIL_MESSAGE_FORMAT],
         Field(description="Format to return the message in.")
     ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
@@ -208,19 +230,19 @@ async def get_email_message(
     Tool to retrieve a specific Gmail message from the user's gmail account.
 
     This tool fetches the details of a Gmail message using the Gmail API. The 
-    message is identified by its unique message ID. If the special identifier 
-    'me' is used for `user_id`, the message is retrieved from the authenticated 
-    user's mailbox.
+    message is identified by its unique message ID. The format of the returned 
+    message is defined per the message_format.
 
     Args:
         message_id (str): Unique ID of the Gmail message to retrieve.
-            - Example: "178fc3c89e1e2a4d"
+            - Example: "1234abcd9876wxyz"
         user_id (Optional[str]): Email ID of the profile to be retrieved.
             - Use "me" to fetch the profile of the authenticated user.
             - Must be a valid email format if not "me". Defaults to "me".
             - Example: "user@example.com"
-        format (Optional[str]): The format to return the message in.
+        message_format (Optional[str]): The format to return the message in.
             - Possible values are "full", "metadata", "minimal" and "raw". 
+            - Defaults to "full", if not provided.
             - Example: "metadata"
 
     Returns:
@@ -234,19 +256,32 @@ async def get_email_message(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not message_id or not message_id.strip():
-        return {"status": "error", "message": "Message Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Message Id cannot be empty."
+        }
+    
+    message_format = message_format if message_format else "full"
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     message = await asyncio.to_thread(
         lambda: service.users().messages().get(
-            userId=user_id, id=message_id, format=format
+            userId=user_id, 
+            id=message_id, 
+            format=message_format
         ).execute()
     )
 
@@ -256,12 +291,15 @@ async def get_email_message(
             "message": f"Message id: {message_id} not found for user {user_id}"
         }
 
-    return {"status": "success", "email_message": message}
+    return {
+        "status": "success", 
+        "email_message": message
+    }
 
 
 @mcp.tool(
-    title="Send an email message.",
-    description=registry.SEND_MESSAGE_DESCRIPTION
+    title="Send Message",
+    description=schema.SEND_MESSAGE_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def send_message(
@@ -297,13 +335,13 @@ async def send_message(
         Optional[str],
         Field(description="Message ID of the email this is replying to.")
     ] = None
-) -> Dict[str, Union[str, Dict[str, Any], List[str]]]:
+) -> Dict[str, Union[str, List[str]]]:
     """
     Tool to send an email using the user's Gmail account.
 
     This tool composes and sends a new Gmail message. The recipient, subject, 
-    and body of the email must be provided, along with optional parameters such 
-    as CC, BCC, and thread ID.
+    and email body must be provided, along with optional parameters such as CC,
+    BCC, and thread ID.
 
     Args:
         user_id (str): The sender's email address.
@@ -326,7 +364,7 @@ async def send_message(
             - Example: "9876543210"
 
     Returns:
-        Dict[str, Union[str, Dict[str, Any]]]: A dictionary containing:
+        Dict[str, Union[str, List[str]]]: A dictionary containing:
             - 'status' (str): "success" or "error"
             On success:
             - 'message' (str): Delivery confirmation message with `message ID`.
@@ -338,12 +376,18 @@ async def send_message(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
-    if to and not to.strip():
+    if not to or not to.strip():
         return {
             "status": "error",
             "message": "Recipient email id cannot be empty."
@@ -359,15 +403,11 @@ async def send_message(
                 "status": "error", 
                 "message": f"Invalid recipient email address: {email.strip()}."
             }
-        else: valid_to.append(email)
 
-    if valid_to:
-        to = ", ".join(valid_to)
-    else:
-        return {
-            "status": "error",
-            "message": "Recipient email id cannot be empty."
-        }
+        else:
+            valid_to.append(email)
+
+    to = ", ".join(valid_to)
 
     subject = "(No Subject)" if not subject or not subject.strip() else subject
 
@@ -420,7 +460,7 @@ async def send_message(
     if thread_id:
         message_payload["threadId"] = thread_id
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     response = await asyncio.to_thread(
         lambda: service.users().messages().send(
@@ -434,30 +474,37 @@ async def send_message(
         "message": f"Email delivered with id: {response.get('id')}"
     }
 
+    warnings = []
+
     if invalid_cc_email:
-        result["warning"] = "Skipped some email addresses that were invalid."
+        warnings.append("cc")
         result["invalid_emails_in_cc"] = invalid_cc_email
 
     if invalid_bcc_email:
-        result["warning"] = "Skipped some email addresses that were invalid."
+        warnings.append("bcc")
         result["invalid_emails_in_bcc"] = invalid_bcc_email
+
+    if warnings:
+        result["warning"] = f"Skipped some invalid email addresses from {
+            ' and '.join(warnings)
+        }."
 
     return result
 
 
 @mcp.tool(
-    title="Modify labels of a message from the user's gmail account.",
-    description=registry.MODIFY_MESSAGE_LABEL_DESCRIPTION
+    title="Modify Message Labels",
+    description=schema.MODIFY_MESSAGE_LABEL_DESCRIPTION
 )
 @handle_gmail_exceptions
-async def modify_message_label(
-    message_id: Annotated[
-        str,
-        Field(description="Unique ID of the Gmail message to modify.")
-    ],
+async def modify_message_labels(
     user_id: Annotated[
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
+    ],
+    message_id: Annotated[
+        str,
+        Field(description="Unique ID of the Gmail message to modify.")
     ],
     add_labels: Annotated[
         Optional[List[str]],
@@ -481,7 +528,7 @@ async def modify_message_label(
             - Must be a valid email format if not "me". Defaults to "me".
             - Example: "me"
         message_id (str): The unique ID of the Gmail message to update.
-            - Example: "17c693d97f54a2b5"
+            - Example: "1234abcd9876wxyz"
         add_labels (Optional[List[str]]): List of label IDs to add.
             - Example: ["INBOX", "STARRED", "CUSTOM_LABEL"]
         remove_labels (Optional[List[str]]): List of label IDs to remove.
@@ -496,13 +543,22 @@ async def modify_message_label(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not message_id or not message_id.strip():
-        return {"status": "error", "message": "Message Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Message Id cannot be empty."
+        }
 
     body = {}
 
@@ -513,9 +569,12 @@ async def modify_message_label(
         body["removeLabelIds"] = remove_labels
 
     if not body:
-        return {"status": "error", "message": "No labels provided to modify."}
+        return {
+            "status": "error", 
+            "message": "No labels provided to modify."
+        }
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     await asyncio.to_thread(
         lambda: service.users().messages().modify(
@@ -532,18 +591,18 @@ async def modify_message_label(
 
 
 @mcp.tool(
-    title="Trash a message from the user's gmail account.",
-    description=registry.TRASH_MESSAGE_DESCRIPTION
+    title="Trash Message",
+    description=schema.TRASH_MESSAGE_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def trash_message(
-    message_id: Annotated[
-        str,
-        Field(description="Unique ID of the Gmail message to trash.")
-    ],
     user_id: Annotated[
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
+    ],
+    message_id: Annotated[
+        str,
+        Field(description="Unique ID of the Gmail message to trash.")
     ]
 ) -> Dict[str, str]:
     """
@@ -570,15 +629,24 @@ async def trash_message(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not message_id or not message_id.strip():
-        return {"status": "error", "message": "Message Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Message Id cannot be empty."
+        }
     
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     await asyncio.to_thread(
         lambda: service.users().messages().trash(
@@ -594,19 +662,19 @@ async def trash_message(
 
 
 @mcp.tool(
-    title="Recover message from the trashed folder of a user's gmail account.",
-    description=registry.UNTRASH_MESSAGE_DESCRIPTION
+    title="Untrash Message",
+    description=schema.UNTRASH_MESSAGE_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def untrash_message(
-    message_id: Annotated[
-        str,
-        Field(description="Unique ID of the Gmail message to recover.")
-    ],
     user_id: Annotated[
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
     ],
+    message_id: Annotated[
+        str,
+        Field(description="Unique ID of the Gmail message to recover.")
+    ]
 ) -> Dict[str, str]:
     """
     Tool to recover a gmail message from the trash folder.
@@ -632,15 +700,24 @@ async def untrash_message(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not message_id or not message_id.strip():
-        return {"status": "error", "message": "Message Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Message Id cannot be empty."
+        }
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     await asyncio.to_thread(
         lambda: service.users().messages().untrash(
@@ -656,8 +733,8 @@ async def untrash_message(
 
 
 @mcp.tool(
-    title="List email drafts from a user's gmail account.",
-    description=registry.LIST_DRAFTS_DESCRIPTION
+    title="List Drafts",
+    description=schema.LIST_DRAFTS_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def list_drafts(
@@ -716,15 +793,21 @@ async def list_drafts(
                 - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
-    
-    if query is not None and not query.strip():
-        query = None
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
-    service = await async_init_gmail()
+    query = str(query).strip() or None if query is not None else None
+    max_results = max_results if max_results else 5
+
+    service = await async_init_gmail_service()
 
     results = await asyncio.to_thread(
         lambda: service.users().drafts().list(
@@ -736,13 +819,14 @@ async def list_drafts(
     )
 
     drafts = results.get("drafts", [])
-    draft_list = []
 
     if not drafts:
         return {
             "status": "not_found",
             "message": "No drafts found in user's gmail account."
         }
+
+    draft_list = []
 
     for draft in drafts:
         draft_id = draft.get("id")
@@ -765,21 +849,21 @@ async def list_drafts(
 
 
 @mcp.tool(
-    title="Get the specified draft from user's gmail account.",
-    description=registry.GET_DRAFT_DESCRIPTION
+    title="Get Draft",
+    description=schema.GET_DRAFT_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def get_draft(
-    draft_id: Annotated[
-        str,
-        Field(description="ID of the draft to retrieve.")
-    ],
     user_id: Annotated[
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
     ],
-    format: Annotated[
-        Optional[registry.GMAIL_MESSAGE_FORMAT],
+    draft_id: Annotated[
+        str,
+        Field(description="ID of the draft to retrieve.")
+    ],
+    draft_format: Annotated[
+        Optional[schema.GMAIL_MESSAGE_FORMAT],
         Field(description="Format to return the draft in.")
     ] = None,
 ) -> Dict[str, Union[str, Dict[str, Any]]]:
@@ -787,8 +871,8 @@ async def get_draft(
     Tool to retrieve a specific draft from a user's Gmail account.
 
     This tool fetches a draft using its `draft_id` and returns the message in a 
-    specified format. If the special identifier 'me' is used for `user_id`, the 
-    message is retrieved from the authenticated user's mailbox.
+    specified draft_format. If the special identifier 'me' is used for 
+    `user_id`, the message is retrieved from the authenticated user's mailbox.
 
     Args:
         user_id (str): Email ID of the user whose draft is to be retrieved.
@@ -799,6 +883,7 @@ async def get_draft(
             - Example: "123draft456"
         format (Optional[str]): The format to return the draft message in.
             - Possible values are "full", "metadata", "minimal" and "raw". 
+            - Defaults to "full", if not provided.
             - Example: "metadata"
 
     Returns:
@@ -812,21 +897,32 @@ async def get_draft(
                 - "message" (str): An error or info message when applicable.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not draft_id or not draft_id.strip():
-        return {"status": "error", "message": "Draft Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Draft Id cannot be empty."
+        }
+    
+    draft_format = draft_format if draft_format else "full"
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     draft = await asyncio.to_thread(
         lambda: service.users().drafts().get(
             userId=user_id,
             id=draft_id,
-            format=format
+            format=draft_format
         ).execute()
     )
 
@@ -838,16 +934,19 @@ async def get_draft(
     
     if "message" not in draft:
         return {
-            "status": "error",
+            "status": "not_found",
             "message": f"Draft {draft_id} does not contain a message object."
         }
 
-    return {"status": "success", "draft": draft.get("message")}
+    return {
+        "status": "success", 
+        "draft": draft.get("message")
+    }
 
 
 @mcp.tool(
-    title="Send an existing email draft from a user's gmail account.",
-    description=registry.SEND_DRAFT_DESCRIPTION
+    title="Send Draft",
+    description=schema.SEND_DRAFT_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def send_draft(
@@ -859,14 +958,13 @@ async def send_draft(
         str,
         Field(description="User's email id. Use 'me' for authenticated users.")
     ]
-) -> Dict[str, Union[str, Dict[str, Any], List[str]]]:
+) -> Dict[str, str]:
     """
-    Tool to send the specified, existing draft to the recipients in the To, Cc, 
+    Tool to send the specified existing draft to the recipients in the To, Cc, 
     and Bcc fields.
 
-    This tool sends the existing draft to specified recipients. This tool can 
-    read the recipients, subject, and body of the email message, along with
-    optional parameters such as CC and BCC.
+    This tool sends the existing draft to specified recipients. This tool does 
+    not create a draft instead sends an existing draft from the user's mailbox.
 
     Args:
         user_id (str): Email ID of the user whose draft is to be sent.
@@ -884,16 +982,25 @@ async def send_draft(
             On failure:
             - 'message' (str): Description of the error
     """
-    if not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+    if not user_id or not user_id.strip():
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
-    if not draft_id.strip():
-        return {"status": "error", "message": "Draft Id cannot be empty."}
+    if not draft_id or not draft_id.strip():
+        return {
+            "status": "error", 
+            "message": "Draft Id cannot be empty."
+        }
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     response = await asyncio.to_thread(
         lambda: service.users().drafts().send(
@@ -915,8 +1022,8 @@ async def send_draft(
 
 
 @mcp.tool(
-    title="Create a draft email message in user's gmail account.",
-    description=registry.CREATE_DRAFT_DESCRIPTION
+    title="Create Draft",
+    description=schema.CREATE_DRAFT_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def create_draft(
@@ -994,19 +1101,27 @@ async def create_draft(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     invalid_to_email = []
 
     if to and to.strip():
         valid_to = []
+        to = re.sub(r"[\(\)\[\]\{\}\<\>]", "", to)
 
         for email in re.split(r",\s*", to):
             if not is_valid_email(email.strip()):
                 invalid_to_email.append(email.strip())
+
             else:
                 valid_to.append(email)
 
@@ -1020,12 +1135,12 @@ async def create_draft(
     message = MIMEText(body or "")
 
     if user_id != "me":
-        message["from"] = user_id
+        message["From"] = user_id
 
     if to:
-        message['to'] = to
+        message['To'] = to
 
-    message['subject'] = subject
+    message['Subject'] = subject
 
     valid_cc = []
     invalid_cc_email = []
@@ -1036,11 +1151,12 @@ async def create_draft(
         for email in re.split(r",\s*", cc):
             if not is_valid_email(email.strip()):
                 invalid_cc_email.append(email.strip())
+
             else:
                 valid_cc.append(email)
 
         if valid_cc:
-            message['cc'] = ", ".join(valid_cc)
+            message['Cc'] = ", ".join(valid_cc)
 
     valid_bcc = []
     invalid_bcc_email = []
@@ -1055,7 +1171,13 @@ async def create_draft(
                 valid_bcc.append(email)
 
         if valid_bcc:
-            message['bcc'] = ", ".join(valid_bcc)
+            message['Bcc'] = ", ".join(valid_bcc)
+    
+    if not (to or cc or bcc):
+        return {
+            "status": "error", 
+            "message": "Draft cannot be empty."
+        }
 
     if in_reply_to:
         message['In-Reply-To'] = in_reply_to
@@ -1067,7 +1189,7 @@ async def create_draft(
     if thread_id:
         message_payload["threadId"] = thread_id
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     response = await asyncio.to_thread(
         lambda: service.users().drafts().create(
@@ -1084,26 +1206,26 @@ async def create_draft(
     warnings = []
 
     if invalid_to_email:
-        warnings.append("Skipped invalid email addresses in to.")
+        warnings.append("to")
         result["invalid_emails_in_to"] = invalid_to_email
 
     if invalid_cc_email:
-        warnings.append("Skipped invalid email addresses in cc.")
+        warnings.append("cc")
         result["invalid_emails_in_cc"] = invalid_cc_email
 
     if invalid_bcc_email:
-        warnings.append("Skipped invalid email addresses in bcc.")
+        warnings.append("bcc")
         result["invalid_emails_in_bcc"] = invalid_bcc_email
 
     if warnings:
-        result["warnings"] = " ".join(warnings)
+        result["warning"] = f"Skipped invalid emails from {', '.join(warnings)}"
 
     return result
 
 
 @mcp.tool(
-    title="Update an existing email draft in user's Gmail account.",
-    description=registry.UPDATE_DRAFT_DESCRIPTION
+    title="Update Draft",
+    description=schema.UPDATE_DRAFT_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def update_draft(
@@ -1147,7 +1269,7 @@ async def update_draft(
         Optional[List[str]],
         Field(description="Email addresses to remove from the 'Bcc' field.")
     ] = None
-) -> Dict[str, Union[str, Dict[str, Any]]]:
+) -> Dict[str, Union[str, List[str]]]:
     """
     Tool to update the specified draft with the provided details.
 
@@ -1187,15 +1309,24 @@ async def update_draft(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not draft_id or not draft_id.strip():
-        return {"status": "error", "message": "Draft Id cannot be empty."}
-    
-    service = await async_init_gmail()
+        return {
+            "status": "error", 
+            "message": "Draft Id cannot be empty."
+        }
+
+    service = await async_init_gmail_service()
 
     existing_draft = await asyncio.to_thread(
         lambda: service.users().drafts().get(
@@ -1234,7 +1365,9 @@ async def update_draft(
     else:
         message["Subject"] = headers.get("Subject", "(No Subject)")
 
-    existing_to = [e for e in re.split(r",\s*", headers.get("To", "")) if e]
+    existing_to = [
+        to for to in re.split(r",\s*", headers.get("To", "")) if to
+    ]
     invalid_to_email = []
 
     if add_to:
@@ -1323,26 +1456,26 @@ async def update_draft(
     warnings = []
 
     if invalid_to_email:
-        warnings.append("Skipped invalid email addresses in to.")
+        warnings.append("to")
         result["invalid_emails_in_to"] = invalid_to_email
 
     if invalid_cc_email:
-        warnings.append("Skipped invalid email addresses in cc.")
+        warnings.append("cc")
         result["invalid_emails_in_cc"] = invalid_cc_email
 
     if invalid_bcc_email:
-        warnings.append("Skipped invalid email addresses in bcc.")
+        warnings.append("bcc")
         result["invalid_emails_in_bcc"] = invalid_bcc_email
 
     if warnings:
-        result["warnings"] = " ".join(warnings)
+        result["warning"] = f"Skipped invalid emails from {', '.join(warnings)}"
 
     return result
 
 
 @mcp.tool(
-    title="Delete the specified email draft from user's gmail account.",
-    description=registry.DELETE_DRAFT_DESCRIPTION
+    title="Delete Draft",
+    description=schema.DELETE_DRAFT_DESCRIPTION
 )
 @handle_gmail_exceptions
 async def delete_draft(
@@ -1356,7 +1489,7 @@ async def delete_draft(
     ],
 ) -> Dict[str, str]:
     """
-    Tool to delete a gmail draft.
+    Tool to delete a gmail draft from the user's Gmail account.
 
     This tool immediately and permanently deletes the specified draft from the 
     user's Gmail account. The tool doesn't simply add it to the trashed folder.
@@ -1378,15 +1511,24 @@ async def delete_draft(
             - 'message' (str): Description of the error.
     """
     if not user_id or not user_id.strip():
-        return {"status": "error", "message": "User Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "User Id cannot be empty."
+        }
 
     if user_id != "me" and not is_valid_email(user_id):
-        return {"status": "error", "message": "Invalid User Id format."}
+        return {
+            "status": "error", 
+            "message": "Invalid User Id format."
+        }
 
     if not draft_id or not draft_id.strip():
-        return {"status": "error", "message": "Draft Id cannot be empty."}
+        return {
+            "status": "error", 
+            "message": "Draft Id cannot be empty."
+        }
 
-    service = await async_init_gmail()
+    service = await async_init_gmail_service()
 
     await asyncio.to_thread(
         lambda: service.users().drafts().delete(
