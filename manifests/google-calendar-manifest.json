@@ -1,8 +1,8 @@
 {
-  "dxt_version": "0.1",
+  "manifest_version": "0.1",
   "name": "google-calendar-mcp-server-extension",
   "display_name": "Google Calendar MCP Server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Google Calendar MCP server offers a comprehensive set of tools for managing calendars and events within a user's Google Calendar account.",
   "author": {
     "name": "Ashwin Raj",
@@ -11,10 +11,9 @@
   "homepage": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/tree/main/src/mcp_server/google_calendar",
   "documentation": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/README.md",
   "support": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/issues",
-  "icon": ".github/icons/google_calendar_mcp_server_icon.png",
+  "icon": "icon.png",
   "screenshots": [
-    ".github/gh_readme_assets/demo_claude/google_calendar_demo/list_events.png",
-    ".github/gh_readme_assets/demo_claude/google_calendar_demo/update_event.png"
+    "http://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_calendar_demo"
   ],
   "server": {
     "type": "python",
@@ -73,7 +72,7 @@
       "description": "Delete an event from the user's Google Calendar."
     },
     {
-      "name": "clear_primary_calendar_events",
+      "name": "clear_primary_calendar",
       "description": "Clear all events from the user's primary Google Calendar."
     }
   ],
