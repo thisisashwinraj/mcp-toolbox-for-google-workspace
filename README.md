@@ -47,7 +47,8 @@ This project is licensed under the Apache-2.0 License and is maintained as an op
 <b>Before you Begin</b>: Ensure that <a href="https://www.python.org/downloads/">Python</a> (>=3.13), <a href="https://nodejs.org/en/download">Node.js</a>, and <a href="https://docs.astral.sh/uv/getting-started/installation/">uv</a> are installed on your system. You should also have a Google Cloud project set up & a Google Workspace, or personal Google account ready for connecting with the server
 </p>
 
-![Send Email in Gmail](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/gmail_demo/send_email_in_gmail.png)
+![List MCP servers](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/list_servers_on_claude_for_desktop.png)
+![List server tools](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/list_server_tools_on_claude_for_desktop.png)
 
 
 ### Configure OAuth 2.0 Credentials
@@ -55,6 +56,8 @@ This project is licensed under the Apache-2.0 License and is maintained as an op
 Next you need to create OAuth 2.0 credentials in the GCP Console. Start by navigating to the [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent) in the Google Cloud Console. Click ```Get Started```, and provide the app information. For the ```audience```, choose **Internal** if you are using Google Workspace or **External** for a personal account and enter your contact information. Click ```Create```
 
 After the OAuth consent screen is ready, select ```Clients``` from the left-hand menu and click on ```Create Client```. Select ```Desktop app``` as the authentication type, provide a name, and click ```Create```. Once ready, download ```credentials.json``` file and store it securely in a safe location of your choice. You will need this later for authenticating to Workspace APIs
+
+If you plan to use the streamlit web client provided in this repo, you must create a second OAuth client in the console. Select ```Web application``` as the auth type and add ```http://localhost:8501/oauth2callback``` to authorised redirect URIs
 
 
 ### Enable Google Workspace APIs
@@ -76,7 +79,9 @@ Click ```Install``` in the **top-right** corner, and if your operating system re
 ![Select OAuth Credentials for MCP Server](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_extensions/google_drive_extension_setup_select_credentials.png)
 
 
-## Claude for Desktop Setup (Legacy)
+## Use with Custom Streamlit Client
+
+This repo includes a streamlit-based client built with the Google ADK framework to interact with the MCP Servers. The client provides a simple **Streamlit UI** for testing and running agents to interact with the Toolbox without writing code.
 
 To begin with the setup, clone this repository, create a virtual environment, and install all the necessary dependencies:
 
@@ -92,6 +97,29 @@ uv venv
 # Install the requierd packages
 uv sync
 ```
+
+Next, create a `secrets.toml` file inside the `.streamlit` directory and add your **OAuth configuration** for a **web** client:
+```
+[auth]
+redirect_uri = "http://localhost:8501/oauth2callback"
+cookie_secret = "long cookie secret string"
+
+[auth.google]
+client_id = "oauth client id"
+client_secret = "oauth client secret"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
+```
+
+Then, add `GOOGLE_API_KEY` to your `.env` file. Once done, run the streamlit client locally with the following command:
+```
+streamlit run client.py
+```
+
+![Streamlit Client Welcome Page](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_streamlit_client/streamlit_client_home_page_dark.png)
+![Streamlit Client Chat Page](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_streamlit_client/streamlit_client_chat_dark.png)
+
+
+## Claude for Desktop Setup (Legacy)
 
 To use the MCP servers with ```Claude for Desktop```, first install the MCP server locally using the following uv command:
 
@@ -155,7 +183,6 @@ For example, if you have cloned the MCP Toolbox repo to your Desktop and want to
 }
 ```
 
-![List MCP servers](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/list_servers_on_claude_for_desktop.png)
 ![Create file in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/create_file_in_google_drive.png)
 ![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/fetch_file_content_from_google_drive.png)
 <!--![Delete file and empty trash in Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_drive_demo/delete_file_and_empty_trash_in_google_drive.png)-->
