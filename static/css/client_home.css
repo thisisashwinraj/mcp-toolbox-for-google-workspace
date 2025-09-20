@@ -1,0 +1,22 @@
+.h1-home-welcome-title {
+    padding-top: 0.05rem !important;
+    padding-bottom: 0.05rem !important;
+    background: linear-gradient(45deg, #FF6B6B, #5F27CD);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    font-size: 60px;
+    font-weight: bold;
+}
+
+.h1-home-welcome-subtitle {
+    padding-top: 0.50rem !important;
+    background: linear-gradient(45deg, #444746, #444746);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    font-size: 60px;
+    font-weight: bold;
+}
