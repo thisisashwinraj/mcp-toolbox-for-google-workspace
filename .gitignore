@@ -205,6 +205,7 @@ __marimo__/
 # Internal Files
 #  These files are used internally by developers and should not be committed to version control.
 extensions
+.credentials
 .credentials/credentials.json
 .credentials/google_calendar_auth_token.json
 .credentials/google_drive_auth_token.json
