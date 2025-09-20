@@ -1,0 +1,31 @@
+[global]
+disableWidgetStateDuplicationWarning = false
+showWarningOnDirectExecution = false
+
+[logger]
+level = "info"
+messageFormat = "%(asctime)s %(message)s"
+
+[client]
+showErrorDetails = "type"
+showSidebarNavigation = true
+
+[runner]
+magicEnabled = false
+
+[server]
+enableStaticServing = true
+
+[[theme.fontFaces]]
+url = "app/static/font/Inter/Inter_18pt-Regular.ttf"
+family = "Inter"
+
+[theme]
+primaryColor = "#0D79FF"
+font = "Inter"
+baseFontSize = 15
+baseFontWeight = 400
+baseRadius = "10px"
+buttonRadius = "10px"
+showWidgetBorder = false
+showSidebarBorder = false
