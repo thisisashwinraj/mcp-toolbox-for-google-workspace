@@ -39,6 +39,9 @@ warnings.filterwarnings("ignore")
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(dotenv_path)
 
+os.environ['GOOGLE_API_KEY'] = st.secrets['GOOGLE_API_KEY']
+os.environ['GOOGLE_GENAI_USE_VERTEXAI'] = st.secrets['GOOGLE_GENAI_USE_VERTEXAI']
+
 st.html(
     """
     <style>
