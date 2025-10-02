@@ -25,17 +25,22 @@ This project is licensed under the Apache-2.0 License and is maintained as an op
     <tr>
       <td>Google Drive</td>
       <td><p align="justify">This server provides a suite of tools for managing files and folders within Google Drive. It offers tools to list files, create new ones, view file content and metadata, update metadata, make copies, delete files and clear trash</p></td>
-      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.1.1/google-drive-mcp-server.mcpb"><img alt="Google Drive MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.2.0/google-drive-mcp-server.mcpb"><img alt="Google Drive MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
     </tr>
     <tr>
       <td>Gmail</td>
       <td><p align="justify">This server provides tools for managing emails and drafts within Gmail. It provides tools to send and receive emails, list and view message content and metadata, create and update drafts, manage profile and trash emails</p></td>
-      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.1.1/gmail-mcp-server.mcpb"><img alt="Gmail MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.2.0/gmail-mcp-server.mcpb"><img alt="Gmail MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
     </tr>
     <tr>
       <td>Google Calendar</td>
       <td><p align="justify">This server provides a range of tools for managing calendars and events within Google Calendar. It offers tools to create, list, update, and delete events and calendars associated with your authenticated Google account</p></td>
-      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.1.1/google-calendar-mcp-server.mcpb"><img alt="Google Calendar MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.2.0/google-calendar-mcp-server.mcpb"><img alt="Google Calendar MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
+    </tr>
+    <tr>
+      <td>Google Tasks</td>
+      <td><p align="justify">This server provides tools for managing tasklists and tasks within Google Tasks. It offers functionality to create, update, move, and delete tasks and tasklists. Use this server to manage your to-dos, and organize work items</p></td>
+      <td><a href="https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/download/v0.2.0/google-tasks-mcp-server.mcpb"><img alt="Google Tasks MCP Server" src="https://img.shields.io/badge/Install-Calude-DA7756?logo=claude"></a></td>
     </tr>
   </tbody>
 </table>
@@ -71,7 +76,7 @@ For example, if you want to interact with Google Drive, navigate to the search b
 
 ## One-Click Claude for Desktop Installation (Recommended)
 
-You can easily install the **MCP servers** of your choice using our ```desktop extensions```. Begin by downloading the latest desktop extension for your preferred Google Workspace service from our [GitHub Releases](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.1.0) page. Next, install the MCP extension by either double-clicking the file to open it in Claude for Desktop or by dragging the extension directly into the application; the app will then launch and display a dialog box prompting you to install the mcp server to your app
+You can easily install the **MCP servers** of your choice using our ```desktop extensions```. Begin by downloading the latest desktop extension for your preferred Google Workspace service from our [GitHub Releases](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/releases/tag/v0.2.0) page. Next, install the MCP extension by either double-clicking the file to open it in Claude for Desktop or by dragging the extension directly into the application; the app will then launch and display a dialog box prompting you to install the mcp server to your app
 
 Click ```Install``` in the **top-right** corner, and if your operating system requests confirmation, click ```Install``` again. Next, browse and select your oauth ```credentials.json``` file and click Save. If the extension is not already enabled, toggle the switch to activate it. After completing these steps, the server will be ready for use. To start using it, simply open a new Claude chat, and enter any prompt that requires calling **one or more tools** available within the server you've installed.
 
@@ -205,8 +210,8 @@ Replace ```<service-name>``` with the service being tested (e.g. gmail), and ```
 
 Click on ```Connect``` to start testing the server. Then, go to the Tools tab to try the different tools available on the server.
 
-![Fetch file content from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/fetch_file_content_mcp_inspector.png)
-![Delete file from Google Drive](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/delete_file_mcp_inspector.png)
+![Get Gmail Profile](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/get_profile_mcp_inspector.png)
+![Trash Message from Gmail](https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_mcp_inspector/trash_message_mcp_inspector.png)
 
 
 ## Example Usage
