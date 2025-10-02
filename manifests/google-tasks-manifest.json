@@ -1,0 +1,112 @@
+{
+  "manifest_version": "0.2",
+  "name": "google-tasks-mcp-server-extension",
+  "display_name": "Google Tasks MCP Server",
+  "version": "0.1.0",
+  "description": "The Google Tasks MCP server offers a comprehensive set of tools for managing tasklists and tasks within a user's Google Tasks account.",
+  "author": {
+    "name": "Ashwin Raj",
+    "email": "thisisashwinraj@gmail.com"
+  },
+  "homepage": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/tree/main/src/mcp_server/google_tasks",
+  "documentation": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/README.md",
+  "support": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/issues",
+  "icon": "icon.png",
+  "screenshots": [
+    "http://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace/blob/main/.github/gh_readme_assets/demo_claude/google_tasks_demo"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "src/mcp_server/google_tasks/server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${__dirname}",
+        "run",
+        "${__dirname}/src/mcp_server/google_tasks/server.py",
+        "--credentials",
+        "${user_config.oauth_credentials}"
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "list_tasklists",
+      "description": "List available tasklists from user's Google Tasks account."
+    },
+    {
+      "name": "create_tasklist",
+      "description": "Create a new tasklist in user's Google Tasks account."
+    },
+    {
+      "name": "get_tasklist",
+      "description": "Retrieve details of a specific tasklist."
+    },
+    {
+      "name": "update_tasklist",
+      "description": "Update the metadata of a specific tasklist."
+    },
+    {
+      "name": "delete_tasklist",
+      "description": "Delete a specific tasklist."
+    },
+    {
+      "name": "clear_tasklist",
+      "description": "Clear all completed tasks from a specific tasklist."
+    },
+    {
+      "name": "list_tasks",
+      "description": "List all tasks from a specific tasklist"
+    },
+    {
+      "name": "create_task",
+      "description": "Create a new task inside a specified tasklist."
+    },
+    {
+      "name": "get_task",
+      "description": "Retrieve details of a specific task."
+    },
+    {
+      "name": "update_task",
+      "description": "Update specific fields of an existing task."
+    },
+    {
+      "name": "move_task",
+      "description": "Move a task within a tasklist or to another tasklist."
+    },
+    {
+      "name": "delete_task",
+      "description": "Delete a specific task from a tasklist."
+    }
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.13"
+    }
+  },
+  "user_config": {
+    "oauth_credentials": {
+      "type": "file",
+      "title": "Google OAuth 2.0 Credentials",
+      "description": "Path to the credentials.json file downloaded from the Google Cloud Console for OAuth 2.0 authentication.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "keywords": [
+    "tasks",
+    "mcp",
+    "google-tasks"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thisisashwinraj/mcp-toolbox-for-google-workspace"
+  }
+}
