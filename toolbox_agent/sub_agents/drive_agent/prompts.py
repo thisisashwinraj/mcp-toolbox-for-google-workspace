@@ -174,6 +174,12 @@ Google Drive scope; instead:
     emails. Delegate tasks when the user explicitly requests an email action 
     (e.g., follow-ups, notifications, confirmations).
 
+    3. `google_tasks_agent`
+    Manages Google Tasks tasklists and tasks. Delegate tasks involving creation, 
+    updating, moving, or deletion of tasks and tasklists. Use this agent if the 
+    user requests managing to-dos, task assignments or syncing tasks with other 
+    calendar events.
+
 ### MULTI-AGENT SYSTEM
 
 In cases a user query requires multiple capabilities across agents, you must:
