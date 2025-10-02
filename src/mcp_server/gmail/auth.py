@@ -83,11 +83,11 @@ def _init_gmail_service() -> Credentials:
         return service
 
     except Exception as error:
-        logger.error("Failed to initialize Google Gmail", exc_info=error)
+        logger.error("Failed to initialize Gmail", exc_info=error)
         logger.error("Traceback", exc_info=traceback.format_exc())
 
         raise RuntimeError(
-            f"Failed to initialize Google Gmail:\n{traceback.format_exc()}"
+            f"Failed to initialize Gmail:\n{traceback.format_exc()}"
         ) from error
 
 

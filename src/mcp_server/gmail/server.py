@@ -34,7 +34,7 @@ mcp = FastMCP(
     description="""
     The Gmail MCP server offers a comprehensive set of tools for managing 
     emails, drafts and profile information within the user's Gmail account.""",
-    version="0.1.1",
+    version="0.1.2",
     instructions=schema.GMAIL_MCP_SERVER_INSTRUCTIONS,
     settings={
         "initialization_timeout": 1200.0
@@ -81,6 +81,21 @@ async def get_profile(
             On failure:
             - 'status' (str): "error"
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            get_profile(user_id="me")
+
+        Expected Output:
+            {
+                "status": "success",
+                "profile_information": {
+                    "emailAddress": "user@example.com",
+                    "messagesTotal": 100,
+                    "threadsTotal": 50,
+                    "historyId": "6587495"
+                }
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -166,6 +181,29 @@ async def list_messages(
             - 'message' (str): Message indicating no email messages were found.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            list_messages(
+                user_id="me", 
+                query="from:user2@example.com", 
+                max_results=2
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "email_messages": [
+                    {
+                        id: "198b7fcea60dacd4",
+                        threadId: "198b7fcea60dacd4"
+                    },
+                    {
+                        id: "198b7b6ecb1debad",
+                        threadId: "198b7b6ecb1debad"
+                    }
+                ]
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -254,6 +292,25 @@ async def get_message(
             - 'message' (str): Message indicating no email message was found.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            get_gmail_message(message_id="17894a", user_id="me", format='full')
+
+        Expected Output:
+            {
+                status: "success"
+                email_message:{
+                    id: "123456abc789",
+                    threadId: "9876543xyz210",
+                    labelIds: ["INBOX", "IMPORTANT"],
+                    snippet: "Hey, just checking in on the report due...",
+                    payload: { ... },
+                    sizeEstimate: 12345,
+                    historyId: "98745632",
+                    internalDate: "1755442962000"
+                }
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -374,6 +431,26 @@ async def send_message(
             - 'invalid_emails_in_bcc' (list): Invalid email ids in bcc, if any.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            send_gmail_message(
+                user_id="me",
+                to="recipient@example.com",
+                subject="Weekly Report",
+                body="Hello, please find the summary for the weekly report...",
+                cc="user@example.com, invalid_email_id",
+            )
+
+        Expected Output:
+            {
+                "result": {
+                    "status": "success",
+                    "message": "Email delivered with id: sample-email-id",
+                    "warning": "Skipped some invalid email addresses from cc.",
+                    "invalid_emails_in_cc": ["invalid_email_id"]
+                }
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -455,7 +532,10 @@ async def send_message(
         message['References'] = in_reply_to
 
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
-    message_payload = {"raw": raw_message}
+
+    message_payload = {
+        "raw": raw_message
+    }
 
     if thread_id:
         message_payload["threadId"] = thread_id
@@ -541,6 +621,21 @@ async def modify_message_labels(
             - 'message' (str): Confirmation message.
             On failure:
             - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            modify_gmail_message_labels(
+                user_id="me",
+                message_id="sample-message-id",
+                add_labels=["STARRED", "IMPORTANT"],
+                remove_labels=["UNREAD"]
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Labels modified for message id: sample-message-id"
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -627,6 +722,16 @@ async def trash_message(
             - 'message' (str): Confirmation message.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            trash_gmail_message(user_id="me", message_id="abcd1234")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Message with id: `abcd1234` has been trashed."
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -657,7 +762,7 @@ async def trash_message(
 
     return {
         "status": "success",
-        "message": f"Message with id: {message_id} has been trashed."
+        "message": f"Message with id: `{message_id}` has been trashed."
     }
 
 
@@ -698,6 +803,19 @@ async def untrash_message(
             - 'message' (str): Confirmation message.
             On failure:
             - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            untrash_message(
+                user_id="me",
+                message_id="abcd1234"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Message with id: `abcd1234` has been recovered."
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -728,7 +846,7 @@ async def untrash_message(
 
     return {
         "status": "success",
-        "message": f"Message with id: {message_id} has been recovered."
+        "message": f"Message with id: `{message_id}` has been recovered."
     }
 
 
@@ -791,6 +909,25 @@ async def list_drafts(
                 - 'message' (str): Message indicating no drafts were found.
             On failure:
                 - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            list_drafts(user_id="me", query="notes", max_results=5)
+
+        Expected Output:
+            {
+                "status": "success",
+                "drafts": [
+                    {
+                        "draft_id": "123abc456",
+                        "message_id": "654msg321",
+                        "thread_id": "123trd456",
+                        "label_ids": ["DRAFT", "INBOX"],
+                        "snippet": "Here are the notes from the meeting..."
+                    },
+                    ...
+                ]
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -845,7 +982,10 @@ async def list_drafts(
             "snippet": snippet
         })
 
-    return {"status": "success", "drafts": draft_list}
+    return {
+        "status": "success", 
+        "drafts": draft_list
+    }
 
 
 @mcp.tool(
@@ -895,6 +1035,25 @@ async def get_draft(
                 - "message" (str): Message indicating no drafts were found.
             On error:
                 - "message" (str): An error or info message when applicable.
+
+    Example:
+        Sample Input:
+            get_draft(user_id="me", draft_id="123abc456", format="full")
+
+        Expected Output:
+            {
+                "status": "success",
+                "draft": {
+                    "id": "sample_draft_id",
+                    "threadId": "sample_thread_id",
+                    "labelIds": ["DRAFT"],
+                    "snippet": "Hey John, Hope you are doing well...",
+                    "payload": {...},
+                    "sizeEstimate": 474,
+                    "historyId": "sample_history_id",
+                    "internalDate": "1756132048000"
+                }
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -978,9 +1137,19 @@ async def send_draft(
         Dict[str, Union[str, Dict[str, Any]]]: A dictionary containing:
             - 'status' (str): "success" or "error"
             On success:
-            - 'message' (str): Delivery confirmation message with `message ID`
+            - 'message' (str): Delivery confirmation message with `message ID`.
             On failure:
-            - 'message' (str): Description of the error
+            - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            send_draft(user_id="me", draft_id="123abc456")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Email delivered with id: 123abc456."
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -1099,6 +1268,21 @@ async def create_draft(
             - 'invalid_emails_in_bcc' (list): Invalid email ids in bcc, if any.
             On failure:
             - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            create_draft(
+                user_id="me",
+                to="recipient@example.com",
+                subject="Draft Email Subject",
+                body="This is the body of the draft email."
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Draft created with id: `123abc456`.",
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -1307,6 +1491,21 @@ async def update_draft(
             - 'message' (str): Confirmation message with the updated draft ID.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            update_draft(
+                user_id="me",
+                draft_id="123abc456",
+                body="This is the updated body of the draft email...",
+                add_to=["user@example.com"]
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Draft updated successfully with id: 123abc456.",
+            }
     """
     if not user_id or not user_id.strip():
         return {
@@ -1362,12 +1561,14 @@ async def update_draft(
             message["Subject"] = subject.strip()
         else:
             message["Subject"] = "(No Subject)"
+
     else:
         message["Subject"] = headers.get("Subject", "(No Subject)")
 
     existing_to = [
         to for to in re.split(r",\s*", headers.get("To", "")) if to
     ]
+
     invalid_to_email = []
 
     if add_to:
@@ -1416,6 +1617,7 @@ async def update_draft(
     existing_bcc = [
         bcc for bcc in re.split(r",\s*", headers.get("Bcc", "")) if bcc
     ]
+
     invalid_bcc_email = []
 
     if add_bcc:
@@ -1438,7 +1640,10 @@ async def update_draft(
     message['Bcc'] = ", ".join(list(set(existing_bcc)))
 
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
-    message_payload = {"message": {"raw": raw_message}}
+
+    message_payload = {
+        "message": {"raw": raw_message}
+    }
 
     response = await asyncio.to_thread(
         lambda: service.users().drafts().update(
@@ -1509,6 +1714,16 @@ async def delete_draft(
             - 'message' (str): Confirmation message.
             On failure:
             - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            delete_draft(user_id="me", draft_id="ab12")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Draft with id: `ab12` has been deleted permanently"
+            }
     """
     if not user_id or not user_id.strip():
         return {

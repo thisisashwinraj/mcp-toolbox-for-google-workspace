@@ -96,23 +96,6 @@ history ID, on success, or an error message if the user ID is invalid.
 This tool is useful for retrieving account-level metadata before performing 
 other Gmail operations. It helps verify the mailbox identity and gives an 
 overview of the message and thread counts without accessing individual emails.
-
----
-
-**Example:**
-**Sample Input:**
-    get_profile(user_id="me")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "profile_information": {
-            "emailAddress": "user@example.com",
-            "messagesTotal": 100,
-            "threadsTotal": 50,
-            "historyId": "6587495"
-        }
-    }
 """
 
 LIST_GMAIL_MESSAGES_DESCRIPTION = """
@@ -125,27 +108,6 @@ ID, an error message is returned.
 This tool is useful for exploring the contents of a mailbox before fetching the
 individual message details. It helps users preview available messages without 
 retrieving full message payloads.
-
----
-
-**Example:**
-**Sample Input:**
-    list_messages(user_id="me", query="from:user2@example.com", max_results=2)
-
-**Expected Output:**
-    {
-        "status": "success",
-        "email_messages": [
-            {
-                id: "198b7fcea60dacd4",
-                threadId: "198b7fcea60dacd4"
-            },
-            {
-                id: "198b7b6ecb1debad",
-                threadId: "198b7b6ecb1debad"
-            }
-        ]
-    }
 """
 
 GET_EMAIL_MESSAGE_DESCRIPTION = """
@@ -156,27 +118,6 @@ message details including internalDate, payload, and historyId.
 This tool is useful for inspecting the details of a message after obtaining its 
 ID from the list_messages response. It helps users access subject lines, sender 
 information, and message body content.
-
----
-
-**Example:**
-**Sample Input:**
-    get_gmail_message(message_id="17894abc123", user_id="me", format='full')
-
-**Expected Output:**
-    {
-        status: "success"
-        email_message:{
-            id: "123456abc789",
-            threadId: "9876543xyz210",
-            labelIds: ["INBOX", "IMPORTANT"],
-            snippet: "Hey, just checking in on the report due...",
-            payload: { ... },
-            sizeEstimate: 12345,
-            historyId: "98745632",
-            internalDate: "1755442962000"
-        }
-    }
 """
 
 SEND_MESSAGE_DESCRIPTION = """
@@ -186,28 +127,6 @@ Supports specifying sender, recipients (To, Cc, Bcc), subject and message body.
 This tool is useful for automating email communication, such as sending emails,
 notifications, reports, or alerts. It allows applications to deliver messages 
 directly from a user's Gmail account without manual intervention.
-
----
-
-**Example:**
-**Sample Input:**
-    send_gmail_message(
-        user_id="me",
-        to="recipient@example.com",
-        subject="Weekly Report",
-        body="Hello, please find the summary for the weekly report...",
-        cc="user@example.com, invalid_email_id",
-    )
-
-**Expected Output:**
-    {
-        "result": {
-            "status": "success",
-            "message": "Email delivered with id: sample-email-id",
-            "warning": "Skipped some invalid email addresses from cc.",
-            "invalid_emails_in_cc": ["invalid_email_id"]
-        }
-    }
 """
 
 MODIFY_MESSAGE_LABEL_DESCRIPTION = """
@@ -218,23 +137,6 @@ This tool is useful for managing Gmail messages, such as organizing emails into
 categories, marking emails as read/unread, or applying/removing system and 
 custom labels. It allows applications to streamline email management tasks 
 directly from a user's Gmail account.
-
----
-
-**Example:**
-**Sample Input:**
-    modify_gmail_message_labels(
-        user_id="me",
-        message_id="sample-message-id",
-        add_labels=["STARRED", "IMPORTANT"],
-        remove_labels=["UNREAD"]
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Labels modified for message id: sample-message-id"
-    }
 """
 
 TRASH_MESSAGE_DESCRIPTION = """
@@ -246,18 +148,6 @@ This tool is useful for managing email workflows where certain messages should
 no longer appear in the inbox, such as archiving outdated conversations, 
 cleaning up spam, or temporarily removing clutter while retaining the option to 
 restore later.
-
----
-
-**Example:**
-**Sample Input:**
-    trash_gmail_message(user_id="me", message_id="sample_message_id")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Message with id: sample_message_id has been trashed."
-    }
 """
 
 UNTRASH_MESSAGE_DESCRIPTION = """
@@ -270,21 +160,6 @@ This tool is useful for recovering emails that were accidentally moved to trash
 or restoring messages that need further action. It ensures that important 
 communications can be brought back into the regular mailbox workflow without 
 data loss.
-
----
-
-**Example:**
-**Sample Input:**
-    untrash_message(
-        user_id="me",
-        message_id="sample_message_id"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Message with id: sample_message_id has been recovered."
-    }
 """
 
 LIST_DRAFTS_DESCRIPTION = """
@@ -295,27 +170,6 @@ status. It allows users to view and manage their email drafts efficiently.
 This tool is useful for exploring the draft messages in a user's mailbox before 
 fetching the individual draft details. It helps users preview available drafts 
 without retrieving full message payloads.
-
----
-
-**Example:**
-**Sample Input:**
-    list_drafts(user_id="me", query="notes", max_results=5)
-
-**Expected Output:**
-    {
-        "status": "success",
-        "drafts": [
-            {
-                "draft_id": "123abc456",
-                "message_id": "654msg321",
-                "thread_id": "123trd456",
-                "label_ids": ["DRAFT", "INBOX"],
-                "snippet": "Here are the notes from the meeting..."
-            },
-            ...
-        ]
-    }
 """
 
 GET_DRAFT_DESCRIPTION = """
@@ -326,27 +180,6 @@ delete draft messages as needed.
 This tool is useful for inspecting the details of a draft after obtaining its 
 ID from the `list_drafts` response. It helps users access subject lines, sender 
 information, and message body content.
-
----
-
-**Example:**
-**Sample Input:**
-    get_draft(user_id="me", draft_id="123abc456", format="full")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "draft": {
-            "id": "sample_draft_id",
-            "threadId": "sample_thread_id",
-            "labelIds": ["DRAFT"],
-            "snippet": "Hey John, Hope you are doing well...",
-            "payload": {...},
-            "sizeEstimate": 474,
-            "historyId": "sample_history_id",
-            "internalDate": "1756132048000"
-        }
-    }
 """
 
 SEND_DRAFT_DESCRIPTION = """
@@ -357,18 +190,6 @@ Gmail API securely handles the sending operation.
 This tool is useful for automating email workflows where drafts are prepared 
 in advance and need to be sent at a later time. It ensures that users can 
 efficiently manage their email communications without duplicating effort.
-
----
-
-**Example:**
-**Sample Input:**
-    send_draft(user_id="me", draft_id="123abc456")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Email delivered with id: 123abc456."
-    }
 """
 
 CREATE_DRAFT_DESCRIPTION = """
@@ -378,23 +199,6 @@ compose and save email drafts without sending them immediately.
 This tool is useful for preparing email messages in advance, allowing users 
 to refine their content before sending. It ensures that users can manage their 
 email communications efficiently without the need for immediate delivery.
-
----
-
-**Example:**
-**Sample Input:**
-    create_draft(
-        user_id="me",
-        to="recipient@example.com",
-        subject="Draft Email Subject",
-        body="This is the body of the draft email."
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Draft created with id: `123abc456`.",
-    }
 """
 
 UPDATE_DRAFT_DESCRIPTION = """
@@ -404,23 +208,6 @@ API handles the update operation securely.
 
 This tool is useful for refining email drafts after initial creation, ensuring 
 that users can make adjustments as needed before sending.
-
----
-
-**Example:**
-**Sample Input:**
-    update_draft(
-        user_id="me",
-        draft_id="123abc456",
-        body="This is the updated body of the draft email...",
-        add_to=["user@example.com"]
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Draft updated successfully with id: 123abc456.",
-    }
 """
 
 DELETE_DRAFT_DESCRIPTION = """
@@ -429,16 +216,5 @@ immediately removes the draft message without moving it to the trash.
 
 This tool is useful for managing email drafts, allowing users to clean unwanted 
 drafts efficiently. **Use with caution, as this action cannot be undone.**
-
----
-
-**Example:**
-**Sample Input:**
-    delete_draft(user_id="me", draft_id="123abc456")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Draft with id: `123abc456` has been deleted permanently."
-    }
 """
+        
