@@ -76,6 +76,31 @@ async def list_tasklists(
             - 'message' (str): Message indicating no tasklists were found.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            list_tasklists(max_results=2)
+
+        Expected Output: 
+            {
+                "status": "success",
+                "tasklists": [
+                    {
+                        "etag": "abc123etag",
+                        "id": "ABCdefGHIjkl",
+                        "title": "Personal",
+                        "updated": "2025-09-25T18:30:00.000Z",
+                        "self_link": "https://www.googleapis.com/tasks/v1/u..."
+                    },
+                    {
+                        "etag": "ghi789etag",
+                        "id": "YZAbcdEFGhij",
+                        "title": "Shopping",
+                        "updated": "2025-09-18T09:45:00.000Z",
+                        "self_link": "https://www.googleapis.com/tasks/v1/u..."
+                    }
+                ]
+            }
     """
     max_results = max_results or 5
 
@@ -101,7 +126,7 @@ async def list_tasklists(
             "status": "not_found",
             "message": "No tasklists found in the user's Google Tasks account."
         }
-    
+
     tasklists = [
         {
             "etag": tasklist.get("etag", ""),
@@ -153,6 +178,22 @@ async def create_tasklist(
                 - 'self_link' (str): URL pointing to the tasklist.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            create_tasklist(title="Project MCP Toolbox")
+
+        Expected Output: 
+            {
+                "status": "success",
+                "tasklist": {
+                    "etag": "\"abcd1234etag\"",
+                    "id": "tasklistId1234",
+                    "title": "Project MCP Toolbox",
+                    "updated": "2025-09-26T15:30:00.000Z",
+                    "self_link": "https://www.googleapis.com/tasks/v1/users..."
+                }
+            }
     """
     if not title or not title.strip():
         return {
@@ -224,6 +265,22 @@ async def get_tasklist(
             - 'message' (str): Message indicating no tasklist was found.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            get_tasklist(tasklist_id="tasklistId1234")
+
+        Expected Output: 
+            {
+                "status": "success",
+                "tasklist": {
+                    "etag": "abcd1234etag",
+                    "tasklist_id": "tasklistId1234",
+                    "title": "Project Alpha Tasks",
+                    "updated": "2025-09-26T15:30:00.000Z",
+                    "self_link": "https://www.googleapis.com/tasks/v1/users..."
+                }
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -301,6 +358,25 @@ async def update_tasklist(
             - 'message' (str): Message indicating the tasklist ID was not found.
             On failure:
             - 'message' (str): Description of the error.
+    
+    Example:
+        Sample Input:
+            update_tasklist(
+                tasklist_id="tasklistId1234",
+                new_title="Updated Project Alpha Tasks"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "tasklist": {
+                    "etag": "\"etag_value\"",
+                    "tasklist_id": "tasklistId1234",
+                    "title": "Updated Project Alpha Tasks",
+                    "updated": "2025-09-26T12:34:56.000Z",
+                    "self_link": "https://www.googleapis.com/tasks/v1/users..."
+                }
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -377,6 +453,16 @@ async def delete_tasklist(
             - 'message' (str): Confirmation indicating tasklist was deleted.
             On failure:
             - 'message' (str): Description of the error.
+
+    Example:
+        Sample Input:
+            delete_tasklist(tasklist_id="AbcD1234")
+
+        Expected Output: 
+            {
+                "status": "success",
+                "message": "Tasklist with ID `AbcD1234` deleted successfully."
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -394,7 +480,7 @@ async def delete_tasklist(
 
     return {
         "status": "success",
-        "message": f"Tasklist with ID {tasklist_id} deleted successfully."
+        "message": f"Tasklist with ID `{tasklist_id}` deleted successfully."
     }
 
 
@@ -429,6 +515,16 @@ async def clear_tasklist(
                   (if any existed).
             - On error:
                 - 'message': Description of the error message.
+
+    Example:
+        Sample Input:
+            clear_tasklist(tasklist_id="task123")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Completed tasks cleared from tasklist `task123`."
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -447,7 +543,7 @@ async def clear_tasklist(
 
     return {
         "status": "success",
-        "message": f"All completed tasks cleared from tasklist: {tasklist_id}."
+        "message": f"Completed tasks cleared from tasklist `{tasklist_id}`."
     }
 
 
@@ -556,6 +652,32 @@ async def list_tasks(
                 - 'message': Message indicating no tasks found.
             - On error:
                 - 'message': Description of the error.
+
+    Example:
+        Sample Input:
+            list_tasks(tasklist_id="stuvwxyz", max_results=1)
+
+        Expected Output:
+            {
+                "status": "success",
+                "tasks": [
+                    {
+                        "kind": "tasks#task",
+                        "id": "abcdefgh",
+                        "etag": "ABCD_1234",
+                        "title": "MCP Toolbox v0.1.2 announcement",
+                        "updated": "2025-09-20T18:30:54.109Z",
+                        "selfLink": "https://www.googleapis.com/tasks/v1/...",
+                        "position": "123456789",
+                        "status": "completed",
+                        "due": "2025-09-21T00:00:00.000Z",
+                        "completed": "2025-09-21T02:44:08.166Z",
+                        "hidden": true,
+                        "links": [],
+                        "webViewLink": "https://tasks.google.com/task/sampl..."
+                    }
+                ]
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -687,13 +809,13 @@ async def create_task(
             - Example: "tasklistId1234"
         title (str): Title of the task; Maximum length: 1024 characters.
             - Example: "Prepare presentation slides"
-        notes (str): Notes describing the task; Maximum length: 8192 characters.
+        notes (str): Notes describing the task; Maximum length: 8192 characters
             - Example: "Include Q3 sales data and charts."
         due (str): Due date of the task in RFC3339 format.
             - Only date is recorded; time portion is ignored. Defaults to None.
             - Example: 2025-11-26T12:34:56Z
         status (str): Status of the task.
-            - Must be one of the following values: "needsAction" or "completed". 
+            - Must be one of the following values: "needsAction" or "completed"
             - If not provided, defaults to "needsAction".
             - Example: "needsAction"
 
@@ -705,6 +827,30 @@ async def create_task(
                   due, notes, updated, selfLink, and other fields.
             - On error:
                 - 'message': Description of the error message.
+
+    Example:
+        Sample Input:
+            create_task(
+                tasklist_id="tasklistId1234",
+                title="Prepare presentation slides",
+                notes="Include Q3 sales data and charts.",
+                status="needsAction"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "task": {
+                    "kind": "tasks#task",
+                    "id": "gfefegeg",
+                    "etag": "HQ4IFufR6_s",
+                    "title": "Prepare presentation slides",
+                    "notes": "Include Q3 sales data and charts.",
+                    "status": "needsAction",
+                    "selfLink": "https://www.googleapis.com/tasks/v1/lists/...",
+                    ...
+                }
+            }
     """
     VALID_TASK_STATUSES = ["needsAction", "completed"]
 
@@ -813,6 +959,25 @@ async def get_task(
                   status, due, completed, notes, updated, selfLink, etc.
             - On error:
                 - 'message': Description of the error message.
+
+    Example:
+        Sample Input:
+            get_task(tasklist_id="tasklistId1234", task_id="abcd_1234")
+
+        Expected Output:
+            {
+                "status": "success",
+                "task": {
+                    "id": "abcd_1234",
+                    "title": "Prepare presentation slides",
+                    "status": "needsAction",
+                    "due": "2025-11-26T12:34:56Z",
+                    "notes": "Include Q3 sales data and charts.",
+                    "updated": "2025-09-26T10:34:56Z",
+                    "selfLink": "https://www.googleapis.com/tasks/v1/lists/...",
+                    ...
+                }
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -910,6 +1075,33 @@ async def update_task(
                 - 'task': Metadata of the updated task.
             - On error:
                 - 'message': Description of the error.
+
+    Example:
+        Sample Input:
+            update_task(
+                tasklist_id="tasklistId1234", 
+                task_id="abcd_1234", 
+                updates={
+                    "title": "Buy groceries",
+                    "notes": "Include fruits and vegetables",
+                    "due": "2025-09-28T10:00:00.000Z"
+                }
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "task": {
+                    "id": "abcd_1234",
+                    "title": "Buy groceries",
+                    "status": "needsAction",
+                    "due": "2025-09-28T10:00:00.000Z",
+                    "notes": "Include fruits and vegetables",
+                    "updated": "2025-09-27T19:34:56Z",
+                    "selfLink": "https://www.googleapis.com/tasks/v1/lists/...",
+                    ...
+                }
+            }
     """
     VALID_TASK_STATUSES = ["needsAction", "completed"]
 
@@ -1064,6 +1256,32 @@ async def move_task(
                 - 'task': Metadata of the moved task.
             - On error:
                 - 'message': Description of the error message.
+
+    Example:
+        Sample Input:
+            move_task(
+                tasklist_id="tasklist1234",
+                task_id="task5678",
+                parent_task_id="parentTask123",
+                previous_task_id="prevTask456"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "task": {
+                    "id": "task5678",
+                    "title": "Prepare presentation slides",
+                    "status": "needsAction",
+                    "due": "2025-11-26T12:34:56Z",
+                    "notes": "Include Q3 sales data and charts.",
+                    "parent": "parentTask123",
+                    "previous": "prevTask456",
+                    "updated": "2025-09-26T10:34:56Z",
+                    "selfLink": "https://www.googleapis.com/tasks/v1/lists/...",
+                    ...
+                }
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -1155,6 +1373,16 @@ async def delete_task(
                 - 'message': Confirmation that the task was deleted.
             - On error:
                 - 'message': Description of the error message.
+
+    Example:
+        Sample Input:
+            delete_task(tasklist_id="listid1234", task_id="taskId5678")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Task taskId5678 deleted from tasklist `listid1234`"
+            }
     """
     if not tasklist_id or not tasklist_id.strip():
         return {
@@ -1180,7 +1408,7 @@ async def delete_task(
 
     return {
         "status": "success",
-        "message": f"Task {task_id} deleted from tasklist {tasklist_id}."
+        "message": f"Task {task_id} deleted from tasklist `{tasklist_id}`"
     }
 
 
