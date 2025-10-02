@@ -31,6 +31,7 @@ from .prompts import GLOBAL_INSTRUCTIONS, ROOT_AGENT_SYSTEM_INSTRUCTIONS
 from .sub_agents.drive_agent.agent import drive_agent
 from .sub_agents.calendar_agent.agent import calendar_agent
 from .sub_agents.gmail_agent.agent import gmail_agent
+from .sub_agents.tasks_agent.agent import tasks_agent
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -95,7 +96,8 @@ root_agent = LlmAgent(
     sub_agents=[
         drive_agent,
         calendar_agent,
-        gmail_agent
+        gmail_agent,
+        tasks_agent
     ],
     disallow_transfer_to_peers=False,
     disallow_transfer_to_parent=False,   
