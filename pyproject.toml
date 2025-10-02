@@ -1,6 +1,6 @@
 [project]
 name = "mcp-toolbox-for-google-workspace"
-version = "0.1.1"
+version = "0.2.0"
 description = "MCP Toolbox for Google Workspace is an open source MCP server for Google Workspace services such as Drive, Calendar, and more."
 readme = "README.md"
 requires-python = ">=3.13"
