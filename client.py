@@ -354,9 +354,11 @@ if __name__ == "__main__":
         with st.container(height=267, border=False):
             st.markdown("Features", unsafe_allow_html=True)
 
-            with st.container(border=False, vertical_alignment="center"):
+            with st.container(border=False, vertical_alignment="top"):
                 cola, colb, colc, cold = st.columns(
-                    4, vertical_alignment="center", gap='small'
+                    4, 
+                    vertical_alignment="center", 
+                    gap='small'
                 )
 
                 if st.session_state.themes["current_theme"] == "dark":
@@ -389,6 +391,20 @@ if __name__ == "__main__":
                     icon_path = "static/images/icons/gmeet_icon.png"
 
                 with cold:
+                    st.image(icon_path, width="stretch")
+
+                cola, colb, colc, cold = st.columns(
+                    4, 
+                    vertical_alignment="center", 
+                    gap='small'
+                )
+
+                if st.session_state.themes["current_theme"] == "dark":
+                    icon_path = "static/images/icons/tasks_icon_dark.png"
+                else:
+                    icon_path = "static/images/icons/tasks_icon.png"
+
+                with cola:
                     st.image(icon_path, width="stretch")
 
         st.markdown("---")
