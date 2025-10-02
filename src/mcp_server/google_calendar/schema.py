@@ -125,45 +125,6 @@ Calendar account. Supports filtering based on minimum access role, inclusion of
 deleted or hidden calendars and maximum number of results. Returns key calendar 
 details such as calendar ID, summary, visibility, and whether it is the primary 
 calendar.
-
----
-
-**Example:**
-**Sample Input:**
-    list_calendars(
-        max_results=10,
-        min_access_role="owner",
-        show_deleted=False,
-        show_hidden=True
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "calendars": [
-            {
-                "calendar_id": "sample_calendar_id@group.calendar.google.com",
-                "summary": "Sample Calendar",
-                "hidden": False,
-                "deleted": False,
-                "primary": True
-            },
-            {
-                "calendar_id": "sample_user@mail.com",
-                "summary": "Personal Calendar",
-                "hidden": True,
-                "deleted": False,
-                "primary": False
-            }
-        ]
-    }
-
-    **If no calendars are found, the response will include a message instead:**
-
-    {
-        "status": "success",
-        "message": "No calendars found for this Google account"
-    }
 """
 
 CREATE_CALENDAR_TOOL_DESCRIPTION = """
@@ -172,25 +133,6 @@ specified title. Optionally accepts a time zone (IANA format) and a description
 for the calendar. If no time zone is provided, it defaults to 'UTC'. Returns 
 the calendar ID, summary, time zone, and a direct link to view the calendar in 
 Google Calendar upon success, or an error message upon failure.
-
----
-
-**Example:**
-**Sample Input:**
-    create_calendar(
-        summary="Team Sync Calendar",
-        time_zone="Asia/Kolkata",
-        description="Weekly sync meetings and planning discussions"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "calendarId": "sample_calendar_id@group.calendar.google.com",
-        "summary": "Team Sync Calendar",
-        "timeZone": "Asia/Kolkata",
-        "calendar_url": "https://calendar.google.com/calendar/u/0/r?cid=cal_id"
-    }
 """
 
 GET_CALENDAR_TOOL_DESCRIPTION = """
@@ -201,23 +143,6 @@ access control, and whether it is a primary or secondary calendar.
 This tool is useful for inspecting calendar configuration before performing any 
 read/write operations on it. It helps verify calendar ownership, access rights, 
 and basic settings without modifying any data or events.
-
----
-
-**Example:**
-**Sample Input:**
-    get_calendar(calendar_id="primary")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "metadata": {
-            "id": "primary",
-            "summary": "My Calendar",
-            "timeZone": "Asia/Kolkata",
-            ...
-        }
-    }
 """
 
 UPDATE_CALENDAR_TOOL_DESCRIPTION = """
@@ -225,30 +150,6 @@ Updates metadata of a specified calendar in the authenticated user's Google
 Calendar account. Allows partial updates to the calendar's title (summary), 
 description, location, and time zone. Validates provided time zone against 
 standard IANA time zones.
-
----
-
-**Example:**
-**Sample Input:**
-    update_calendar_metadata(
-        calendar_id="sample_calendar_id@group.calendar.google.com",
-        summary="Team Events",
-        description="Calendar for tracking all team-related events",
-        location="Bangalore, India",
-        timezone="Asia/Kolkata"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "metadata": {
-            "calendar_id": "sample_calendar_id@group.calendar.google.com",
-            "summary": "Team Events",
-            "description": "Calendar for tracking all team-related events",
-            "location": "Bangalore, India",
-            "timeZone": "Asia/Kolkata"
-        }
-    }
 """
 
 DELETE_CALENDAR_TOOL_DESCRIPTION = """
@@ -256,25 +157,6 @@ Deletes a secondary calendar from the user's Google Calendar account. This tool
 first fetches calendar metadata to determine whether the calendar is the user's 
 primary calendar. If it is, the deletion is blocked to prevent removing the 
 primary calendar. Only secondary calendars can be deleted.
-
----
-
-**Example:**
-**Sample Input:**
-    delete_calendar(calendar_id="sample_calendar_id")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Calendar with ID 'sample_calendar_id' deleted successfully"
-    }
-
-    **If the calendar id corresponds to the Primary Calendar of the user:**
-
-    {
-        "status": "error",
-        "message": "Cannot delete the user's primary calendar."
-    }
 """
 
 CLEAR_PRIMARY_CALENDAR_TOOL_DESCRIPTION = """
@@ -284,18 +166,6 @@ includes both past and upcoming events. It is especially useful for resetting a
 calendar while retaining its metadata and sharing settings.
 
 This operation is irreversible, and care should be taken before invoking it.
-
----
-
-**Example:**
-**Sample Input:**
-    clear_calendar_events(calendar_id="sample_id")
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "All events from calendar sample_id have been cleared."
-    }
 """
 
 LIST_CALENDAR_EVENTS_TOOL_DESCRIPTION = """
@@ -310,34 +180,6 @@ sync calendar data within a specific window.
 
 You may optionally sort results and control the number of attendees and events 
 returned. Supports both primary and secondary calendars.
-
----
-
-**Example:**
-**Sample Input:**
-    list_calendar_events(
-        calendar_id="primary",
-        query="team sync",
-        time_min="2025-08-01T00:00:00Z",
-        show_deleted=False,
-        single_events=True,
-        order_by="startTime"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "events": [
-            {
-                "id": "sample_event_1",
-                "summary": "Internal Team Sync",
-                "start": { "dateTime": "2025-08-02T10:00:00+05:30" },
-                "end": { "dateTime": "2025-08-02T11:00:00+05:30" },
-                ...
-            },
-            ...
-        ]
-    }
 """
 
 GET_EVENT_TOOL_DESCRIPTION = """
@@ -355,31 +197,6 @@ If time_zone is provided and valid, the event timings in the response will be
 adjusted accordingly. Otherwise, the calendar's default time zone is used. You 
 can also limit the number of attendees returned via the max_attendees parameter 
 to avoid excessive payload.
-
----
-
-**Example:**
-**Sample Input:**
-    get_event(
-        calendar_id="primary",
-        event_id="sample_event_id",
-        max_attendees=50,
-        time_zone="Asia/Kolkata"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "event": {
-            "id": "sample_event_id",
-            "summary": "Team Sync",
-            "start": { "dateTime": "2025-08-10T10:00:00+05:30" },
-            "end": { "dateTime": "2025-08-10T11:00:00+05:30" },
-            "attendees": [...],
-            "location": "Meeting Room 2",
-            ...
-        }
-    }
 """
 
 CREATE_EVENT_TOOL_DESCRIPTION = """
@@ -393,38 +210,6 @@ permissions like whether attendees can invite other guests or see each other.
 
 This tool is useful for scheduling one-time or recurring events, setting up 
 meetings, and automating calendar-based workflows.
-
----
-
-**Example:**  
-**Sample Input:**  
-    create_event(
-        calendar_id="primary",
-        summary="Team Sync",
-        description="Weekly team sync for project updates",
-        location="Conference Room 3",
-        start_time="2025-08-07T10:00:00+05:30",
-        end_time="2025-08-07T11:00:00+05:30",
-        attendees=["alice@example.com", "bob@example.com"],
-        recurrence=["RRULE:FREQ=WEEKLY;BYDAY=TH"],
-        visibility="default",
-        transparency="opaque",
-        guestsCanInviteOthers=True,
-        guestsCanSeeOtherGuests=False
-    )
-
-**Expected Output:**  
-    {
-        "status": "success",
-        "event": {
-            "id": "sample_event_id",
-            "summary": "Team Sync",
-            "start": { "dateTime": "2025-08-07T10:00:00+05:30" },
-            "end": { "dateTime": "2025-08-07T11:00:00+05:30" },
-            "location": "Conference Room 3",
-            ...
-        }
-    }
 """
 
 UPDATE_EVENT_TOOL_DESCRIPTION = """
@@ -438,36 +223,6 @@ giving fine-grained control over how the updated event behaves.
 
 This tool is useful for rescheduling meetings, changing participants, extending 
 durations, or modifying recurring event patterns without creating a new event.
-
----
-
-**Example:**  
-**Sample Input:**  
-    update_event(
-        calendar_id="primary",
-        event_id="sample_event_id",
-        summary="Updated Team Sync",
-        description="Extended weekly sync with additional discussion on tests",
-        location="Conference Room 5",
-        start_time="2025-08-07T10:30:00+05:30",
-        end_time="2025-08-07T12:00:00+05:30",
-        attendees=["alice@example.com", "bob@example.com", "cody@example.com"],
-        guestsCanInviteOthers=True,
-        guestsCanSeeOtherGuests=True
-    )
-
-**Expected Output:**  
-    {
-        "status": "success",
-        "event": {
-            "id": "sample_event_id",
-            "summary": "Updated Team Sync",
-            "start": { "dateTime": "2025-08-07T10:30:00+05:30" },
-            "end": { "dateTime": "2025-08-07T12:00:00+05:30" },
-            "location": "Conference Room 5",
-            ...
-        }
-    }
 """
 
 DELETE_EVENT_TOOL_DESCRIPTION = """
@@ -478,19 +233,4 @@ attendees will receive cancellation notifications if applicable.
 
 This tool is useful for removing any canceled meetings, outdated events, or 
 erroneously created entries.
-
----
-
-**Example:**  
-**Sample Input:**  
-    delete_event(
-        calendar_id="primary",
-        event_id="sample_event_id"
-    )
-
-**Expected Output:**  
-    {
-        "status": "success",
-        "message": "Event 'sample_event_id' deleted from calendar 'primary'."
-    }
 """

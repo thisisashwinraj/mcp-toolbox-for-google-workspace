@@ -38,7 +38,7 @@ mcp = FastMCP(
     description="""
     The Google Calendar MCP server offers a comprehensive set of tools for 
     managing calendars and events within a user's Google Calendar account.""",
-    version="0.1.1",
+    version="0.1.2",
     instructions=schema.GOOGLE_CALENDAR_MCP_SERVER_INSTRUCTIONS,
     settings={
         "initialization_timeout": 1200.0
@@ -107,13 +107,39 @@ async def list_calendars(
             - 'message' (str): Message indicating no calendars were found
             On failure:
             - 'message' (str): Description of the error
+
+    Example:
+        Sample Input:
+            list_calendars(max_results=5, show_deleted=False, show_hidden=True)
+
+        Expected Output:
+            {
+                "status": "success",
+                "calendars": [
+                    {
+                        "calendar_id": "calendarid1@group.calendar.google.com",
+                        "summary": "Sample Calendar",
+                        "hidden": False,
+                        "deleted": False,
+                        "primary": True
+                    },
+                    {
+                        "calendar_id": "sample_user@mail.com",
+                        "summary": "Personal Calendar",
+                        "hidden": True,
+                        "deleted": False,
+                        "primary": False
+                    },
+                    ...
+                ]
+            }
     """
     CALENDAR_ACCESS_ROLES = ["freeBusyReader", "owner", "reader", "writer"]
 
     if min_access_role and min_access_role not in CALENDAR_ACCESS_ROLES:
         return {
             "status": "error",
-            "message": f"Invalid calendar access role: {min_access_role}"
+            "message": f"Invalid calendar access role: {min_access_role}."
         }
 
     service = await async_init_google_calendar_service()
@@ -132,7 +158,7 @@ async def list_calendars(
     if not items:
         return {
             "status": "not_found",
-            "message": "No calendars found for this Google account"
+            "message": "No calendars found for this Google account."
         }
 
     calendars = []
@@ -203,6 +229,23 @@ async def create_calendar(
             - 'calendar_url' (str): Direct link to view the calendar in web UI
             On failure:
             - 'message' (str): Description of the error
+
+    Example:
+        Sample Input:
+            create_calendar(
+                summary="Team Sync Calendar",
+                time_zone="Asia/Kolkata",
+                description="Weekly sync meetings and planning discussions"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "calendarId": "sample_calendar_id@group.calendar.google.com",
+                "summary": "Team Sync Calendar",
+                "timeZone": "Asia/Kolkata",
+                "calendar_url": "https://calendar.google.com/calendar..."
+            }
     """
     if not summary or not summary.strip():
         return {
@@ -218,7 +261,7 @@ async def create_calendar(
                 "status": "error",
                 "message": (
                     f"Invalid time zone: '{time_zone}'."
-                    "Please provide a valid IANA time zone (e.g. Asia/Kolkata)"
+                    "Please provide a valid IANA time zone (e.g. Asia/Kolkata)."
                 )
             }
     else:
@@ -272,8 +315,8 @@ async def get_calendar(
     This tool retrieves details such as calendar name, time zone, access roles, 
     and other settings associated with the specified calendar.It is useful for 
     retrieving calendar configuration details without accessing or modifying 
-    any of its events. Can be used to verify calendar existence, inspect 
-    ownership, or confirm properties before performing further actions.
+    any of its events. This tool can be used to verify calendar existence, 
+    inspect ownership, or confirm properties before performing further actions.
 
     Args:
         calendar_id (str): ID of the primary calendar to retrieve metadata for.
@@ -286,6 +329,21 @@ async def get_calendar(
             - 'metadata' (dict, optional): Calendar metadata if found.
             On failure/not found:
             - 'message' (str, optional): Additional details or error messages.
+        
+    Example:
+        Sample Input:
+            get_calendar(calendar_id="primary")
+
+        Expected Output:
+            {
+                "status": "success",
+                "metadata": {
+                    "id": "primary",
+                    "summary": "My Calendar",
+                    "timeZone": "Asia/Kolkata",
+                    ...
+                }
+            }
     """
     if not calendar_id or not calendar_id.strip():
         return {
@@ -368,7 +426,28 @@ async def update_calendar(
                 - 'metadata' (Dict): Dictionary with updated calendar fields.
             - On failure:
                 - 'message' (str): Description of the error
+                        
+    Example:
+        Sample Input:
+            update_calendar_metadata(
+                calendar_id="sample_calendar_id@group.calendar.google.com",
+                summary="Team Events",
+                description="Calendar for tracking team-related events",
+                location="Bangalore, India",
+                timezone="Asia/Kolkata"
+            )
 
+        Expected Output:
+            {
+                "status": "success",
+                "metadata": {
+                    "calendar_id": "calendar_id@group.calendar.google.com",
+                    "summary": "Team Events",
+                    "description": "Calendar for tracking team-related events",
+                    "location": "Bangalore, India",
+                    "timeZone": "Asia/Kolkata"
+                }
+            }
     """
     if not any([summary, description, location, timezone]):
         return {
@@ -408,7 +487,7 @@ async def update_calendar(
                 "status": "error",
                 "message": (
                     f"Invalid time zone: '{timezone}'."
-                    "Please provide a valid IANA time zone (e.g. Asia/Kolkata)"
+                    "Please provide a valid IANA time zone (e.g. Asia/Kolkata)."
                 )
             }
 
@@ -462,6 +541,16 @@ async def delete_calendar(
         Dict[str, str]: A dictionary containing:
             - 'status' (str): "success" or "error"
             - 'message' (str): Confirmation meassage, or reason for failure
+
+    Example:
+        Sample Input:
+            delete_calendar(calendar_id="abcd1234")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Calendar with ID `abcd1234` deleted successfully."
+            }
     """
     if not calendar_id or not calendar_id.strip():
         return {
@@ -491,7 +580,80 @@ async def delete_calendar(
 
     return {
         "status": "success",
-        "message": f"Calendar with ID '{calendar_id}' deleted successfully."
+        "message": f"Calendar with ID `{calendar_id}` deleted successfully."
+    }
+
+
+@mcp.tool(
+    title="Clear Primary Calendar.",
+    description=schema.CLEAR_PRIMARY_CALENDAR_TOOL_DESCRIPTION
+)
+@handle_google_calendar_exceptions
+async def clear_primary_calendar(
+    calendar_id: Annotated[
+        str,
+        Field(description="Unique ID of the calendar to clear events from.")
+    ]
+) -> Dict[str, str]:
+    """
+    Tool to clear all events from a user's primary Calendar. This tool does not
+    delete the calendar itself, only the events within it.
+
+    This tool deletes all events from a user's primary calendar. This operation 
+    can't be undone and affects all future and past events within the calendar. 
+    It is useful for resetting the primary calendar.
+
+    Args:
+        calendar_id (str): The unique identifier of the calendar to clear.
+            - Example: "sample_calendar_id"
+
+    Returns:
+        Dict[str, str]: A dictionary containing:
+            - 'status' (str): "success" or "error".
+            - 'message' (str): Description of the result or reason for failure.
+    
+    Example:
+        Sample Input:
+            clear_calendar_events(calendar_id="ab12")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "All events from calendar `ab12` have been cleared."
+            }
+    """
+    if not calendar_id or not calendar_id.strip():
+        return {
+            "status": "error", 
+            "message": "Calendar ID cannot be empty."
+        }
+
+    service = await async_init_google_calendar_service()
+
+    calendar = await asyncio.to_thread(
+        lambda: service.calendars().get(
+            calendarId=calendar_id
+        ).execute()
+    )
+
+    if not calendar.get("primary", False):
+        return {
+            "status": "error",
+            "message": (
+                "Cannot clear secondary calendar. "
+                "Only the primary calendar can be cleared."
+            )
+        }
+
+    await asyncio.to_thread(
+        lambda: service.calendars().clear(
+            calendarId=calendar_id
+        ).execute()
+    )
+
+    return {
+        "status": "success",
+        "message": f"All events from calendar {calendar_id} have been cleared."
     }
 
 
@@ -607,6 +769,31 @@ async def list_events(
             On Failure/Not Found:
             - 'message' (str): Additional details or error messages.
 
+    Example:
+        Sample Input:
+            list_calendar_events(
+                calendar_id="primary",
+                query="team sync",
+                time_min="2025-08-01T00:00:00Z",
+                show_deleted=False,
+                single_events=True,
+                order_by="startTime"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "events": [
+                    {
+                        "id": "sample_event_1",
+                        "summary": "Internal Team Sync",
+                        "start": { "dateTime": "2025-08-02T10:00:00+05:30" },
+                        "end": { "dateTime": "2025-08-02T11:00:00+05:30" },
+                        ...
+                    },
+                    ...
+                ]
+            }
     """
     if not calendar_id or not calendar_id.strip():
         return {
@@ -630,7 +817,7 @@ async def list_events(
             "status": "error",
             "message": (
                 f"Invalid time_max format: '{time_max}'. "
-               "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
+                "Expected RFC3339 format (e.g., 2023-10-01T12:00:00Z)."
             )
         }
 
@@ -732,6 +919,29 @@ async def get_event(
             - 'warning' (str, optional): Warning message if timezone is invalid
             On failure/not found:
             - 'message' (str): Any relevant messages or error info
+
+    Example:
+        Sample Input:
+            get_event(
+                calendar_id="primary",
+                event_id="sample_event_id",
+                max_attendees=50,
+                time_zone="Asia/Kolkata"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "event": {
+                    "id": "sample_event_id",
+                    "summary": "Team Sync",
+                    "start": { "dateTime": "2025-08-10T10:00:00+05:30" },
+                    "end": { "dateTime": "2025-08-10T11:00:00+05:30" },
+                    "attendees": [...],
+                    "location": "Meeting Room 2",
+                    ...
+                }
+            }
     """
     if not calendar_id or not calendar_id.strip(): 
         return {
@@ -901,6 +1111,36 @@ async def create_event(
                 - 'warning' (str, optional): Warning if invalid values found
             - On failure:
                 - 'message' (str): Error message or explanation
+
+    Example:  
+        Sample Input:  
+            create_event(
+                calendar_id="primary",
+                summary="Team Sync",
+                description="Weekly team sync for project updates",
+                location="Conference Room 3",
+                start_time="2025-08-07T10:00:00+05:30",
+                end_time="2025-08-07T11:00:00+05:30",
+                attendees=["alice@example.com", "bob@example.com"],
+                recurrence=["RRULE:FREQ=WEEKLY;BYDAY=TH"],
+                visibility="default",
+                transparency="opaque",
+                guestsCanInviteOthers=True,
+                guestsCanSeeOtherGuests=False
+            )
+
+        Expected Output:  
+            {
+                "status": "success",
+                "event": {
+                    "id": "sample_event_id",
+                    "summary": "Team Sync",
+                    "start": { "dateTime": "2025-08-07T10:00:00+05:30" },
+                    "end": { "dateTime": "2025-08-07T11:00:00+05:30" },
+                    "location": "Conference Room 3",
+                    ...
+                }
+            }
     """
     if not calendar_id or not calendar_id.strip():
         return {
@@ -1137,6 +1377,34 @@ async def update_event(
                 - 'warning' (str, optional): Warning if invalid timezone found
             - On failure:
                 - 'message' (str): Error message or explanation
+
+    Example:  
+        Sample Input:  
+            update_event(
+                calendar_id="primary",
+                event_id="sample_event_id",
+                summary="Updated Team Sync",
+                description="Extended weekly sync with additional discussion.",
+                location="Conference Room 5",
+                start_time="2025-08-07T10:30:00+05:30",
+                end_time="2025-08-07T12:00:00+05:30",
+                attendees=["alice@example.com", "bob@example.com"],
+                guestsCanInviteOthers=True,
+                guestsCanSeeOtherGuests=True
+            )
+
+        Expected Output:  
+            {
+                "status": "success",
+                "event": {
+                    "id": "sample_event_id",
+                    "summary": "Updated Team Sync",
+                    "start": { "dateTime": "2025-08-07T10:30:00+05:30" },
+                    "end": { "dateTime": "2025-08-07T12:00:00+05:30" },
+                    "location": "Conference Room 5",
+                    ...
+                }
+            }
     """
     if not calendar_id or not calendar_id.strip():
         return {
@@ -1182,7 +1450,7 @@ async def update_event(
     if (start_time and not end_time) or (end_time and not start_time):
         return {
             "status": "error",
-            "message": "Both start_time and end_time must be provided together."
+            "message": "Both start_time and end_time must be provided."
         }
 
     bad_timezone = False
@@ -1316,7 +1584,7 @@ async def delete_event(
 
     This function removes an event identified by its event_id from the calendar
     specified by calendar_id. Optional notifications can be sent to all or some 
-    attendees informing them about the deletion.
+    attendees informing them about the deletion. **Use with caution.**
 
     Parameters:
         calendar_id (str): The ID of the calendar where the event is stored
@@ -1332,6 +1600,19 @@ async def delete_event(
         dict: A dictionary containing:
             - "status" (str): "success" if deletion successful, else "error"
             - "message" (str): Descriptive message about the operation outcome
+
+    Example:  
+    Sample Input:  
+        delete_event(
+            calendar_id="primary",
+            event_id="sample_event_id"
+        )
+
+    Expected Output:  
+        {
+            "status": "success",
+            "message": "Event `sample_event_id` deleted from `primary`."
+        }
     """
     if not calendar_id or not calendar_id.strip():
         return {
@@ -1359,70 +1640,7 @@ async def delete_event(
 
     return {
         "status": "success",
-        "message": f"Event '{event_id}' deleted from calendar '{calendar_id}'."
-    }
-
-
-@mcp.tool(
-    title="Clear Primary Calendar.",
-    description=schema.CLEAR_PRIMARY_CALENDAR_TOOL_DESCRIPTION
-)
-@handle_google_calendar_exceptions
-async def clear_primary_calendar(
-    calendar_id: Annotated[
-        str,
-        Field(description="Unique ID of the calendar to clear all events from")
-    ]
-) -> Dict[str, str]:
-    """
-    Tool to clear all events from a user's primary Calendar. This tool does not
-    delete the calendar itself, only the events within it.
-
-    This tool deletes all events from a user's primary calendar. This operation 
-    can't be undone and affects all future and past events within the calendar. 
-    It is useful for resetting the primary calendar.
-
-    Args:
-        calendar_id (str): The unique identifier of the calendar to clear.
-            - Example: "sample_calendar_id"
-
-    Returns:
-        Dict[str, str]: A dictionary containing:
-            - 'status' (str): "success" or "error".
-            - 'message' (str): Description of the result or reason for failure.        
-    """
-    if not calendar_id or not calendar_id.strip():
-        return {
-            "status": "error", 
-            "message": "Calendar ID cannot be empty."
-        }
-
-    service = await async_init_google_calendar_service()
-
-    calendar = await asyncio.to_thread(
-        lambda: service.calendars().get(
-            calendarId=calendar_id
-        ).execute()
-    )
-
-    if not calendar.get("primary", False):
-        return {
-            "status": "error",
-            "message": (
-                "Cannot clear secondary calendar. "
-                "Only the primary calendar can be cleared."
-            )
-        }
-
-    await asyncio.to_thread(
-        lambda: service.calendars().clear(
-            calendarId=calendar_id
-        ).execute()
-    )
-
-    return {
-        "status": "success",
-        "message": f"All events from calendar {calendar_id} have been cleared."
+        "message": f"Event `{event_id}` deleted from `{calendar_id}`."
     }
 
 
