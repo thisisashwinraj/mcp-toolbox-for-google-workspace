@@ -147,7 +147,7 @@ def handle_google_drive_exceptions(func):
             
             elif status in [500, 503]:
                 message = (
-                    "The Google Calendar service is temporarily unavailable. "
+                    "The Google Drive service is temporarily unavailable. "
                     "Please retry after some time."
                 )
             

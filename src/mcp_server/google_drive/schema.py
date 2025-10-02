@@ -126,34 +126,6 @@ Searches a user's Google Drive for up to 15 files matching an optional keyword
 in their names. Supports optional sorting and filtering based on specific Drive 
 spaces (e.g. drive, photos, appDataFolder). Returns file metadata including ID, 
 name, and a shareable link upon success, or an error message upon failure.
-
----
-
-**Example:**
-**Sample Input:**
-    list_files(
-        max_results=2,
-        keyword="sample",
-        sort_keys=["modifiedTime", "name desc"],
-        spaces=["drive"]
-    )
-
-**Expected Output:** 
-    {
-        "status": "success",
-        "files": [
-            {
-                "id": "sample_file_id_1",
-                "name": "sample_text.txt",
-                "webViewLink": "https://drive.google.com/file/d/sample_id_1"
-            },
-            {
-                "id": "sample_file_id_2",
-                "name": "sample_image.png",
-                "webViewLink": "https://drive.google.com/file/d/sample_id_2"
-            }
-        ]
-    }
 """
 
 CREATE_NEW_FILE_TOOL_DESCRIPTION = """
@@ -161,24 +133,6 @@ Creates a new file in the user's Google Drive with a specified name and MIME
 type (e.g., Google Doc, plain text, PDF, folder, etc.). Optionally allows 
 placement inside a specific folder using its ID. Returns the file ID, name, and 
 a shareable link upon success, or an error message upon failure.
-
----
-
-**Example:**
-**Sample Input:**
-    create_new_file(
-        file_name="sample_gsheet"
-        target_mime_type="application/vnd.google-apps.spreadsheet"
-        folder_id="sample_folder_id"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "id": "sample_file_id",
-        "name": "sample_gsheet",
-        "webViewLink": "https://drive.google.com/file/d/sample_gsheet_id"
-    }
 """
 
 FETCH_FILE_CONTENT_TOOL_DESCRIPTION = """
@@ -187,60 +141,6 @@ Supports both binary files (e.g., .txt, .pdf) via direct download and Google
 Workspace files (e.g., Docs, Sheets, Slides) by exporting them to a supported 
 MIME type. Returns the file content (decoded as UTF-8) or an error message if 
 retrieval fails.
-
----
-
-**Example:**
-**Sample Input:**
-    fetch_file_content(
-        file_id="sample_file_id"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "content": "Lorem ipsum dolor sit amet consectetur adipiscing..."
-    }
-"""
-
-UPDATE_FILE_METADATA_TOOL_DESCRIPTION = """
-Updates metadata of a specified file in Google Drive without altering its 
-content. Supports changes to file name, description, and starred status. Also 
-allows modifying file hierarchy by adding or removing parent folders. Returns 
-the updated metadata on success, or an error message on failure.
-
----
-
-**Example:**
-**Sample Input:**
-    update_file_metadata(
-        file_id="sample_file_id",
-        metadata={
-            "name": "renamed_sample_file.txt",
-            "starred": true,
-            "addParents": ["sample_parent_folder_id"]
-        }
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "updated_file_metadata": {
-            "id": "sample_file_id",
-            "name": "renamed_sample_file.txt",
-            "mimeType": "text/plain",
-            "starred": true,
-            parents:[
-                0: "sample_parent_folder_id"
-            ],
-            "webViewLink": "https://drive.google.com/file/d/file_id",
-            ...
-        },
-        "requested_changes": {
-            "add_parents": ["sample_parent_folder_id"],
-            "remove_parents": []
-        }
-    }
 """
 
 FETCH_FILE_METADATA_TOOL_DESCRIPTION = """
@@ -250,24 +150,13 @@ fetched using a wildcard (`*`). The tool returns the metadata based on the
 user's access permissions. If a requested metadata field is not available for 
 the specified file, the tool gracefully ignores it. If no metadata is found for 
 the specified fields, an appropriate message is returned.
+"""
 
----
-
-**Example:**
-**Sample Input:**
-    fetch_file_metadata(
-        file_id="sample_file_id",
-        metadata=["mimeType", "modifiedTime"]
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "file_metadata": {
-            "mimeType": "text/plain",
-            "modifiedTime": "2025-07-16T09:07:58.389Z"
-        }
-    }
+UPDATE_FILE_METADATA_TOOL_DESCRIPTION = """
+Updates metadata of a specified file in Google Drive without altering its 
+content. Supports changes to file name, description, and starred status. Also 
+allows modifying file hierarchy by adding or removing parent folders. Returns 
+the updated metadata on success, or an error message on failure.
 """
 
 COPY_FILE_TOOL_DESCRIPTION = """
@@ -275,25 +164,6 @@ Creates a copy of an existing file in the user's Google Drive. Allows the user
 to optionally modify metadata such as the new file's name, description, and 
 parent folder. Returns the copied file's ID, name, and a shareable link upon 
 success, or an error message upon failure.
-
----
-
-**Example:**
-**Sample Input:**
-    copy_file(
-        file_id="original_file_id",
-        new_name="copy_of_file",
-        folder_id="target_folder_id",
-        copy_permissions=True
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "id": "copied_file_id",
-        "name": "copy_of_file",
-        "webViewLink": "https://drive.google.com/file/d/copied_file_url"
-    }
 """
 
 DELETE_FILE_TOOL_DESCRIPTION = """
@@ -301,36 +171,10 @@ Permanently deletes a specified file from the user's Google Drive, including
 files in both 'My Drive' and 'Shared Drives' provided the user has the required 
 permissions. The file must not be in the trash. Returns a success message upon 
 deletion or an error message if the operation fails.
-
----
-
-**Example:**
-**Sample Input:**
-    delete_file(
-        file_id="sample_file_id"
-    )
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "File with id 'sample_file_id' deleted successfully."
-    }
 """
 
 EMPTY_TRASH_TOOL_DESCRIPTION = """
 Permanently deletes all items currently in the authenticated users Google Drive 
 trash. This operation is irreversible — once deleted items cannot be recovered. 
 Use this tool to programmatically clear the trash and free up storage space.
-
----
-
-**Example:**
-**Sample Input:**
-    empty_trash()
-
-**Expected Output:**
-    {
-        "status": "success",
-        "message": "Trash emptied successfully."
-    }
 """

@@ -32,8 +32,8 @@ mcp = FastMCP(
     "Google Drive MCP Server",
     description="""
     The Google Drive MCP server provides a suite of tools for managing files 
-    and folders within Google Drive""",
-    version="0.1.1",
+    and folders within Google Drive.""",
+    version="0.1.2",
     instructions=schema.GOOGLE_DRIVE_MCP_SERVER_INSTRUCTIONS,
     settings={
         "initialization_timeout": 1200.0
@@ -79,8 +79,7 @@ async def list_files(
     "folder", "modifiedByMeTime", "modifiedTime", "recency", "viewedByMeTime", 
     "sharedWithMeTime", and "starred".
 
-    VALID_SPACES: "drive" (main Google Drive), "appDataFolder" (app-specific 
-    data folder), and "photos" (Google Photos).
+    VALID_SPACES: "drive", "appDataFolder", and "photos".
 
     Args:
         max_results (int): The maximum number of files to retrieve.
@@ -114,6 +113,32 @@ async def list_files(
             - 'message' (str): Message indicating no matching results found. 
             On failure:
             - 'message' (str): Contains a description of the error.
+
+    Example:
+        Sample Input:
+            list_files(
+                max_results=2,
+                keyword="sample",
+                sort_keys=["modifiedTime", "name desc"],
+                spaces=["drive"]
+            )
+
+        Expected Output: 
+            {
+                "status": "success",
+                "files": [
+                    {
+                        "id": "sample_file_id_1",
+                        "name": "sample_text.txt",
+                        "webViewLink": "https://drive.google.com/file/d/..."
+                    },
+                    {
+                        "id": "sample_file_id_2",
+                        "name": "sample_image.png",
+                        "webViewLink": "https://drive.google.com/file/d/..."
+                    }
+                ]
+            }
     """
     BASE_SORT_KEYS = {
         "folder", "modifiedByMeTime", "viewedByMeTime", "name", "starred",
@@ -196,7 +221,7 @@ async def create_file(
     ],
     folder_id: Annotated[
         Optional[str],
-        Field(description="ID of the parent folder (optional)")
+        Field(description="Optional ID of the parent folder")
     ] = None,
     enforce_single_parent: Annotated[
         Optional[bool],
@@ -245,6 +270,22 @@ async def create_file(
             - 'webViewLink' (str): Link to view the newly created file in Drive
             On failure:
             - 'message' (str): Description of the error
+
+    Example:
+        Sample Input:
+            create_new_file(
+                file_name="sample_gsheet"
+                target_mime_type="application/vnd.google-apps.spreadsheet"
+                folder_id="sample_folder_id"
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "id": "sample_file_id",
+                "name": "sample_gsheet",
+                "webViewLink": "https://drive.google.com/file/d/samplesheetid"
+            }
     """
     if not file_name or not file_name.strip():
         return {
@@ -384,7 +425,7 @@ async def fetch_file_content(
     account. This function supports both:
     - **Google Workspace files** (Docs, Sheets, Slides), which are exported 
       into a text-based format (`text/plain`, `text/csv`, `application/pdf`).
-    - **Binary/Office files** (e.g. DOCX, XLSX, XLS, PPTX, plain text, PDF etc), 
+    - **Binary/Office files** (e.g. DOCX, XLSX, PPTX, plain text, PDF etc), 
       which are downloaded and converted into text using appropriate parsers.
 
     This function does not support:
@@ -402,6 +443,16 @@ async def fetch_file_content(
             - 'content' (str): File content as text
             On failure:
             - 'message' (str): Error message (if status is "error")
+
+    Example:
+        Sample Input:
+            fetch_file_content(file_id="sample_file_id")
+
+        Expected Output:
+            {
+                "status": "success",
+                "content": "Lorem ipsum dolor sit amet consectetur..."
+            }
     """
     if not file_id or not file_id.strip():
         return {
@@ -440,10 +491,7 @@ async def fetch_file_content(
 
         for key, export_mime in mime_map.items():
             if key in mime_type:
-                return await _fetch_workspace_file_content(
-                    file_id, 
-                    export_mime
-                )
+                return await _fetch_workspace_file_content(file_id, export_mime)
 
         return {
             "status": "error",
@@ -530,6 +578,19 @@ async def fetch_file_metadata(
             - 'message' (str): Message indicating no metadata found.
             On failure:
             - 'message' (str): Description of the failure.
+
+    Example:
+        Sample Input:
+            fetch_file_metadata(file_id="samplefileid", metadata=["mimeType"])
+
+        Expected Output:
+            {
+                "status": "success",
+                "file_metadata": {
+                    "mimeType": "text/plain",
+                    "modifiedTime": "2025-07-16T09:07:58.389Z"
+                }
+            }
     """
     VALID_METADATA_FIELDS_SET = set(schema.VALID_METADATA_FIELDS.__args__)
 
@@ -573,7 +634,7 @@ async def fetch_file_metadata(
         }
 
         if invalid_fields:
-            response["warning"] = f"Ignored invalid fields: {invalid_fields}"
+            response["warning"] = f"Ignored invalid fields: {invalid_fields}."
 
         return response
 
@@ -636,6 +697,37 @@ async def update_file_metadata(
             - 'updated_file_metadata' (dict): The updated file metadata
             On failure:
             - 'message' (str, optional): An error message if operation fails
+
+    Example:
+        Sample Input:
+            update_file_metadata(
+                file_id="sample_file_id",
+                metadata={
+                    "name": "renamed_sample_file.txt",
+                    "starred": true,
+                    "addParents": ["sample_parent_folder_id"]
+                }
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "updated_file_metadata": {
+                    "id": "sample_file_id",
+                    "name": "renamed_sample_file.txt",
+                    "mimeType": "text/plain",
+                    "starred": true,
+                    parents:[
+                        0: "sample_parent_folder_id"
+                    ],
+                    "webViewLink": "https://drive.google.com/file/d/file_id",
+                    ...
+                },
+                "requested_changes": {
+                    "add_parents": ["sample_parent_folder_id"],
+                    "remove_parents": []
+                }
+            }
     """
     ALLOWED_METADATA_FIELDS = {"name", "description", "starred"}
 
@@ -744,6 +836,23 @@ async def copy_file(
             - 'webViewLink' (str): Link to view the copied file
             On failure:
             - 'message' (str): Reason for the failure.
+
+    Example:
+        Sample Input:
+            copy_file(
+                file_id="original_file_id",
+                new_name="copy_of_file",
+                folder_id="target_folder_id",
+                copy_permissions=True
+            )
+
+        Expected Output:
+            {
+                "status": "success",
+                "id": "copied_file_id",
+                "name": "copy_of_file",
+                "webViewLink": "https://drive.google.com/file/d/file_url"
+            }
     """
     if not file_id or not file_id.strip():
         return {
@@ -809,6 +918,16 @@ async def delete_file(
             On failure:
             - 'message' (str): Reason for the failure 
                 - e.g., permission denied, invalid ID, api error etc
+
+    Example:
+        Sample Input:
+            delete_file(file_id="sample_file_id")
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "File with id 'sample_file_id' deleted successfully."
+            }
     """
     if not file_id or not file_id.strip():
         return {
@@ -848,6 +967,16 @@ async def empty_trash() -> Dict[str, str]:
         Dict[str, str]: A dictionary containing:
             - status (str): "success" or "error"
             - message (str): Descriptive message about the operation's outcome
+
+    Example:
+        Sample Input:
+            empty_trash()
+
+        Expected Output:
+            {
+                "status": "success",
+                "message": "Trash emptied successfully."
+            }
     """
     service = await async_init_google_drive_service()
     await asyncio.to_thread(lambda: service.files().emptyTrash().execute())
